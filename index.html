@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>637 Cervejaria | Reserva de Quadras</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Manrope:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <div class="hero-content">
+          <p class="eyebrow">637 Cervejaria • Desde 2017</p>
+          <h1>Tênis, Beach Tennis e cerveja artesanal no mesmo lugar.</h1>
+          <p class="hero-copy">
+            Um espaço criado para fabricar cerveja artesanal de qualidade e
+            difundir duas paixões: Tênis &amp; Cerveja. Consulte a grade do dia,
+            escolha sua quadra e envie a solicitação em menos de um minuto.
+          </p>
+          <div class="hero-tags" aria-label="Destaques da 637 Cervejaria">
+            <span>637 Cervejaria</span>
+            <span>Cerveja artesanal</span>
+            <span>Tênis &amp; Cerveja</span>
+          </div>
+        </div>
+        <div class="hero-aside">
+          <figure class="hero-logo">
+            <img
+              src="images/perfil637.jpg"
+              alt="Logo da 637 Cervejaria"
+            />
+          </figure>
+          <div class="hero-card">
+            <p class="hero-card-label">Horário de funcionamento</p>
+            <strong>07h às 22h</strong>
+            <p>Blocos de 1 hora para Beach Tennis e Tênis.</p>
+            <button
+              id="admin-access-button"
+              class="ghost-button admin-access-button"
+              type="button"
+            >
+              Admin
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main>
+        <section class="toolbar">
+          <label class="field">
+            <span>Data</span>
+            <input id="date-input" type="date" />
+          </label>
+          <div class="legend">
+            <span><i class="legend-dot available"></i>Disponível</span>
+            <span><i class="legend-dot pending"></i>Pendente</span>
+            <span><i class="legend-dot confirmed"></i>Confirmado</span>
+            <span><i class="legend-dot blocked"></i>Bloqueado</span>
+          </div>
+        </section>
+
+        <section class="status-banner" id="status-banner"></section>
+
+        <section class="schedule-section">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Grade visual</p>
+              <h2>Agenda por quadra e horário</h2>
+            </div>
+            <button id="refresh-button" class="secondary-button" type="button">
+              Atualizar agenda
+            </button>
+          </div>
+          <div id="schedule-grid" class="schedule-grid"></div>
+        </section>
+
+        <section id="admin-panel" class="admin-panel hidden" aria-hidden="true">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Admin</p>
+              <h2>Reservas e bloqueios do dia</h2>
+            </div>
+            <button id="admin-exit-button" class="ghost-button" type="button">
+              Fechar painel
+            </button>
+          </div>
+
+          <div class="admin-grid">
+            <article class="admin-card">
+              <h3>Reservas</h3>
+              <div id="admin-reservations" class="admin-list"></div>
+            </article>
+
+            <article class="admin-card">
+              <h3>Bloquear horário</h3>
+              <form id="block-form" class="stack-form">
+                <label class="field">
+                  <span>Quadra</span>
+                  <select name="court" required></select>
+                </label>
+                <label class="field">
+                  <span>Horário</span>
+                  <select name="time" required></select>
+                </label>
+                <label class="field">
+                  <span>Motivo</span>
+                  <input
+                    name="reason"
+                    type="text"
+                    maxlength="80"
+                    placeholder="Manutenção, aula, evento..."
+                    required
+                  />
+                </label>
+                <button class="primary-button" type="submit">
+                  Registrar bloqueio
+                </button>
+              </form>
+            </article>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <dialog id="booking-modal" class="modal">
+      <form id="booking-form" class="modal-card" method="dialog">
+        <div class="modal-header">
+          <div>
+            <p class="eyebrow">Nova reserva</p>
+            <h3 id="booking-slot-title">Horário selecionado</h3>
+          </div>
+          <button id="close-modal-button" class="icon-button" type="button">
+            ×
+          </button>
+        </div>
+
+        <div class="pix-box">
+          <p class="pix-label">Pagamento via PIX</p>
+          <strong id="pix-key">pix@quadras.com</strong>
+          <span id="pix-amount">R$ 80,00</span>
+        </div>
+
+        <label class="field">
+          <span>Nome</span>
+          <input name="name" type="text" minlength="3" required />
+        </label>
+        <label class="field">
+          <span>Telefone</span>
+          <input
+            name="phone"
+            type="tel"
+            inputmode="tel"
+            placeholder="(11) 99999-9999"
+            required
+          />
+        </label>
+
+        <p class="fine-print">
+          A reserva entra como pendente até a confirmação manual do pagamento.
+        </p>
+
+        <div class="modal-actions">
+          <button class="ghost-button" id="cancel-booking-button" type="button">
+            Cancelar
+          </button>
+          <button class="primary-button" type="submit">
+            Enviar reserva
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="app.js"></script>
+  </body>
+</html>
