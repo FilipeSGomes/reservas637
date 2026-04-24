@@ -70,3 +70,4 @@ Ações usadas:
 
 Sem API key e webhook configurados, a aplicação entra em modo local usando `localStorage`, o que facilita testar a interface antes de conectar o backend.
 # reservas637
+# reservas637
