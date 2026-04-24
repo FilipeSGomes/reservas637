@@ -56,6 +56,7 @@ const elements = {
 boot();
 
 function boot() {
+  registerServiceWorker();
   elements.dateInput.value = state.selectedDate;
   populateSelects();
   attachEvents();
@@ -490,4 +491,16 @@ function formatDate(value) {
     month: "2-digit",
     year: "numeric",
   }).format(new Date(`${value}T12:00:00`));
+}
+
+function registerServiceWorker() {
+  if (!("serviceWorker" in navigator)) {
+    return;
+  }
+
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch((error) => {
+      console.error("Falha ao registrar service worker", error);
+    });
+  });
 }
