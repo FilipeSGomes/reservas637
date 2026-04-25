@@ -256,6 +256,10 @@ h1 {
   background: var(--red);
 }
 
+.unavailable {
+  background: var(--red);
+}
+
 .blocked {
   background: var(--gray);
 }
@@ -346,9 +350,18 @@ h1 {
   box-shadow: 0 10px 20px rgba(16, 38, 29, 0.08);
 }
 
+.slot-card:disabled {
+  opacity: 1;
+}
+
 .slot-card.available {
   background: var(--green-soft);
   color: #113220;
+}
+
+.slot-card.unavailable {
+  background: var(--red);
+  color: #ffffff;
 }
 
 .slot-card.pending {

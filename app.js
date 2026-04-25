@@ -219,8 +219,8 @@ function getSlotState(courtId, time) {
   const block = state.blocks.find((entry) => entry.quadra === courtId && entry.horario === time);
   if (block) {
     return {
-      status: "blocked",
-      description: block.motivo || "Horário indisponível",
+      status: "unavailable",
+      description: "Horário indisponível",
     };
   }
 
@@ -235,27 +235,28 @@ function getSlotState(courtId, time) {
 
   if (reservation.status === "confirmado") {
     return {
-      status: "confirmed",
-      description: `Reservado para ${reservation.nome}`,
+      status: "unavailable",
+      description: "Horário indisponível",
     };
   }
 
   if (reservation.status === "faturado") {
     return {
-      status: "billed",
-      description: `Faturado para ${reservation.nome}`,
+      status: "unavailable",
+      description: "Horário indisponível",
     };
   }
 
   return {
-    status: "pending",
-    description: `Aguardando confirmação de ${reservation.nome}`,
+    status: "unavailable",
+    description: "Horário indisponível",
   };
 }
 
 function labelForStatus(status) {
   const labels = {
     available: "Disponível",
+    unavailable: "Indisponível",
     pending: "Pendente",
     confirmed: "Confirmado",
     blocked: "Bloqueado",
