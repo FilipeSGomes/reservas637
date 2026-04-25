@@ -1,7 +1,7 @@
 const APP_CONFIG = {
   googleSheetsApiKey: "",
   spreadsheetId: "1yAY3OEWCv0Be3c7YxhTl70rTNBWqJAUXknpU5-UkNXc",
-  appsScriptWebhookUrl: "https://script.google.com/macros/s/AKfycbwY20dNukwG6anIDRf8j41vPk95KLrC7TTshMjrfJ1z3k1F3aWnaslX7AfTOjzvSTga/exec",
+  appsScriptWebhookUrl: "https://script.google.com/macros/s/AKfycbxAQeWPiF0Nhi0ZSJwMFKa7ni6YiMEX5KIfScXfYH0B5C4mwDh56GyIKmylj8UF28m2/exec",
   adminPassword: "admin123",
   pixKey: "pix@quadras.com",
   pricingByCourt: {
