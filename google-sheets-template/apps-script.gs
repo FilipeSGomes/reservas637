@@ -36,7 +36,10 @@ function appendReservation_(spreadsheet, payload) {
     payload.horario || "",
     payload.nome || "",
     payload.telefone || "",
+    payload.cpf || "",
     payload.status || "pendente",
+    payload.pagamento || "pix",
+    payload.observacao || "",
   ]);
 }
 
@@ -49,7 +52,7 @@ function confirmReservation_(spreadsheet, payload) {
     throw new Error("Nenhuma reserva encontrada para confirmar.");
   }
 
-  var values = sheet.getRange(2, 1, lastRow - 1, 6).getValues();
+  var values = sheet.getRange(2, 1, lastRow - 1, 9).getValues();
   for (var i = values.length - 1; i >= 0; i -= 1) {
     var row = values[i];
     var sameReservation =
@@ -59,7 +62,7 @@ function confirmReservation_(spreadsheet, payload) {
       row[4] === (payload.telefone || "");
 
     if (sameReservation) {
-      sheet.getRange(i + 2, 6).setValue("confirmado");
+      sheet.getRange(i + 2, 7).setValue("confirmado");
       return;
     }
   }

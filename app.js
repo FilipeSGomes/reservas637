@@ -12,6 +12,8 @@ const APP_CONFIG = {
   },
 };
 
+const sheetsUrl = `https://docs.google.com/spreadsheets/d/${APP_CONFIG.spreadsheetId}/gviz/tq?tqx=out:json`;
+
 const COURTS = [
   { id: "BT1", name: "Beach Tennis 1", type: "Beach Tennis" },
   { id: "BT2", name: "Beach Tennis 2", type: "Beach Tennis" },
@@ -39,9 +41,21 @@ const elements = {
   statusBanner: document.querySelector("#status-banner"),
   scheduleGrid: document.querySelector("#schedule-grid"),
   refreshButton: document.querySelector("#refresh-button"),
+  preBookingModal: document.querySelector("#pre-booking-modal"),
+  preBookingTitle: document.querySelector("#pre-booking-title"),
+  preBookingAmount: document.querySelector("#pre-booking-amount"),
+  closePreBookingButton: document.querySelector("#close-pre-booking-button"),
+  cancelPreBookingButton: document.querySelector("#cancel-pre-booking-button"),
+  continueBookingButton: document.querySelector("#continue-booking-button"),
   bookingModal: document.querySelector("#booking-modal"),
   bookingForm: document.querySelector("#booking-form"),
   bookingSlotTitle: document.querySelector("#booking-slot-title"),
+  bookingRegistrationStep: document.querySelector("#booking-registration-step"),
+  bookingPaymentStep: document.querySelector("#booking-payment-step"),
+  bookingNextButton: document.querySelector("#booking-next-button"),
+  bookingSubmitButton: document.querySelector("#booking-submit-button"),
+  pixPaymentBox: document.querySelector("#pix-payment-box"),
+  billingPaymentBox: document.querySelector("#billing-payment-box"),
   pixKey: document.querySelector("#pix-key"),
   pixAmount: document.querySelector("#pix-amount"),
   closeModalButton: document.querySelector("#close-modal-button"),
@@ -71,8 +85,16 @@ function attachEvents() {
   });
 
   elements.refreshButton.addEventListener("click", loadAgenda);
+  elements.closePreBookingButton.addEventListener("click", closePreBookingModal);
+  elements.cancelPreBookingButton.addEventListener("click", closePreBookingModal);
+  elements.continueBookingButton.addEventListener("click", continueToBookingForm);
   elements.closeModalButton.addEventListener("click", closeModal);
   elements.cancelBookingButton.addEventListener("click", closeModal);
+  elements.bookingNextButton.addEventListener("click", showPaymentStep);
+  elements.bookingForm.querySelector('[name="cpf"]').addEventListener("input", formatCpfInput);
+  elements.bookingForm.querySelectorAll('[name="payment"]').forEach((input) => {
+    input.addEventListener("change", updatePaymentView);
+  });
 
   elements.bookingForm.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -102,11 +124,10 @@ async function loadAgenda() {
     renderSchedule();
     renderAdminReservations();
 
-    const usingFallback = !APP_CONFIG.googleSheetsApiKey || !APP_CONFIG.spreadsheetId;
     updateBanner(
-      usingFallback
-        ? "Modo local ativo. Configure Google Sheets e Apps Script em `app.js` para produção."
-        : `Agenda carregada para ${formatDate(state.selectedDate)}.`
+      APP_CONFIG.spreadsheetId
+        ? `Agenda carregada para ${formatDate(state.selectedDate)}.`
+        : "Modo local ativo. Configure Google Sheets e Apps Script em `app.js` para produção."
     );
   } catch (error) {
     console.error(error);
@@ -119,39 +140,39 @@ async function loadAgenda() {
 }
 
 async function fetchSheetRows(sheetName) {
-  if (!APP_CONFIG.googleSheetsApiKey || !APP_CONFIG.spreadsheetId) {
+  if (!APP_CONFIG.spreadsheetId) {
     return readLocalData()[sheetName === "reservas" ? "reservations" : "blocks"];
   }
 
-  const range = encodeURIComponent(sheetName === "reservas" ? `${sheetName}!A2:F` : `${sheetName}!A2:D`);
-  const url =
-    `https://sheets.googleapis.com/v4/spreadsheets/${APP_CONFIG.spreadsheetId}/values/${range}` +
-    `?key=${APP_CONFIG.googleSheetsApiKey}`;
-
+  const url = `${sheetsUrl}&sheet=${encodeURIComponent(sheetName)}`;
   const response = await fetch(url);
   if (!response.ok) {
     throw new Error(`Erro ao ler aba ${sheetName}`);
   }
 
-  const payload = await response.json();
-  const rows = payload.values ?? [];
+  const payloadText = await response.text();
+  const payload = parseGvizResponse(payloadText);
+  const rows = payload.table?.rows ?? [];
   if (sheetName === "reservas") {
-    return rows.map(([data, quadra, horario, nome, telefone, status]) => ({
-      data,
-      quadra,
-      horario,
-      nome,
-      telefone,
-      status: status || "pendente",
-    }));
+    return rows.map((row) => ({
+      data: normalizeSheetDate(row.c?.[0]),
+      quadra: getCellValue(row.c?.[1]),
+      horario: normalizeSheetTime(row.c?.[2]),
+      nome: getCellValue(row.c?.[3]),
+      telefone: getCellValue(row.c?.[4]),
+      cpf: getCellValue(row.c?.[5]),
+      status: getCellValue(row.c?.[6]) || "pendente",
+      pagamento: getCellValue(row.c?.[7]) || "pix",
+      observacao: getCellValue(row.c?.[8]),
+    })).filter((row) => row.data && row.quadra && row.horario);
   }
 
-  return rows.map(([data, quadra, horario, motivo]) => ({
-    data,
-    quadra,
-    horario,
-    motivo,
-  }));
+  return rows.map((row) => ({
+    data: normalizeSheetDate(row.c?.[0]),
+    quadra: getCellValue(row.c?.[1]),
+    horario: normalizeSheetTime(row.c?.[2]),
+    motivo: getCellValue(row.c?.[3]),
+  })).filter((row) => row.data && row.quadra && row.horario);
 }
 
 function renderSchedule() {
@@ -183,7 +204,7 @@ function renderSchedule() {
       `;
 
       if (slotState.status === "available") {
-        card.addEventListener("click", () => openBookingModal(court, time));
+        card.addEventListener("click", () => openPreBookingModal(court, time));
       }
 
       list.appendChild(card);
@@ -219,6 +240,13 @@ function getSlotState(courtId, time) {
     };
   }
 
+  if (reservation.status === "faturado") {
+    return {
+      status: "billed",
+      description: `Faturado para ${reservation.nome}`,
+    };
+  }
+
   return {
     status: "pending",
     description: `Aguardando confirmação de ${reservation.nome}`,
@@ -231,16 +259,36 @@ function labelForStatus(status) {
     pending: "Pendente",
     confirmed: "Confirmado",
     blocked: "Bloqueado",
+    billed: "Faturado",
   };
   return labels[status];
 }
 
-function openBookingModal(court, time) {
+function openPreBookingModal(court, time) {
   state.selectedSlot = { courtId: court.id, courtName: court.name, time };
-  elements.bookingSlotTitle.textContent = `${court.id} • ${formatDate(state.selectedDate)} • ${time}`;
-  elements.pixKey.textContent = APP_CONFIG.pixKey;
-  elements.pixAmount.textContent = APP_CONFIG.pricingByCourt[court.id] ?? "Consulte";
+  elements.preBookingTitle.textContent = `${court.name} • ${formatDate(state.selectedDate)} • ${time}`;
+  elements.preBookingAmount.textContent = APP_CONFIG.pricingByCourt[court.id] ?? "Consulte";
+  elements.preBookingModal.showModal();
+}
+
+function closePreBookingModal() {
+  state.selectedSlot = null;
+  elements.preBookingModal.close();
+}
+
+function continueToBookingForm() {
+  if (!state.selectedSlot) {
+    return;
+  }
+
+  elements.preBookingModal.close();
+  elements.bookingSlotTitle.textContent =
+    `${state.selectedSlot.courtName} • ${formatDate(state.selectedDate)} • ${state.selectedSlot.time}`;
   elements.bookingForm.reset();
+  showRegistrationStep();
+  elements.pixKey.textContent = APP_CONFIG.pixKey;
+  elements.pixAmount.textContent = APP_CONFIG.pricingByCourt[state.selectedSlot.courtId] ?? "Consulte";
+  updatePaymentView();
   elements.bookingModal.showModal();
 }
 
@@ -249,23 +297,51 @@ function closeModal() {
   elements.bookingModal.close();
 }
 
+function showRegistrationStep() {
+  elements.bookingRegistrationStep.classList.remove("hidden");
+  elements.bookingPaymentStep.classList.add("hidden");
+  elements.bookingNextButton.classList.remove("hidden");
+  elements.bookingSubmitButton.classList.add("hidden");
+}
+
+function showPaymentStep() {
+  if (!elements.bookingForm.reportValidity()) {
+    return;
+  }
+
+  elements.bookingRegistrationStep.classList.add("hidden");
+  elements.bookingPaymentStep.classList.remove("hidden");
+  elements.bookingNextButton.classList.add("hidden");
+  elements.bookingSubmitButton.classList.remove("hidden");
+}
+
+function updatePaymentView() {
+  const payment = getSelectedPayment();
+  elements.pixPaymentBox.classList.toggle("hidden", payment !== "pix");
+  elements.billingPaymentBox.classList.toggle("hidden", payment !== "faturamento");
+}
+
 async function submitBooking() {
   if (!state.selectedSlot) {
     return;
   }
 
   const formData = new FormData(elements.bookingForm);
+  const pagamento = String(formData.get("payment") || "pix");
   const booking = {
     data: state.selectedDate,
     quadra: state.selectedSlot.courtId,
     horario: state.selectedSlot.time,
     nome: String(formData.get("name") || "").trim(),
     telefone: String(formData.get("phone") || "").trim(),
-    status: "pendente",
+    cpf: String(formData.get("cpf") || "").trim(),
+    status: pagamento === "faturamento" ? "faturado" : "pendente",
+    pagamento,
+    observacao: String(formData.get("observation") || "").trim(),
   };
 
-  if (!booking.nome || !booking.telefone) {
-    updateBanner("Preencha nome e telefone antes de enviar a reserva.", true);
+  if (!booking.nome || !booking.telefone || !booking.cpf) {
+    updateBanner("Preencha nome, telefone e CPF antes de enviar a reserva.", true);
     return;
   }
 
@@ -277,7 +353,9 @@ async function submitBooking() {
   closeModal();
   await loadAgenda();
   updateBanner(
-    `Reserva enviada para ${booking.quadra} às ${booking.horario}. Status pendente até confirmação do PIX.`
+    booking.status === "faturado"
+      ? `Reserva faturada para ${booking.quadra} às ${booking.horario}.`
+      : `Reserva enviada para ${booking.quadra} às ${booking.horario}. Status pendente até confirmação do PIX.`
   );
 }
 
@@ -330,13 +408,24 @@ function renderAdminReservations() {
       <div class="admin-item-top">
         <strong>${reservation.quadra} • ${reservation.horario}</strong>
         <span>${labelForStatus(
-          reservation.status === "confirmado" ? "confirmed" : "pending"
+          reservation.status === "confirmado"
+            ? "confirmed"
+            : reservation.status === "faturado"
+              ? "billed"
+              : "pending"
         )}</span>
       </div>
-      <p class="admin-item-meta">${reservation.nome} • ${reservation.telefone}</p>
+      <p class="admin-item-meta">
+        ${reservation.nome} • ${reservation.telefone}
+        ${reservation.cpf ? ` • CPF ${reservation.cpf}` : ""}
+      </p>
+      <p class="admin-item-meta">
+        Pagamento: ${reservation.pagamento || "pix"}
+        ${reservation.observacao ? ` • ${reservation.observacao}` : ""}
+      </p>
     `;
 
-    if (reservation.status !== "confirmado") {
+    if (reservation.status === "pendente") {
       const actions = document.createElement("div");
       actions.className = "admin-item-actions";
 
@@ -384,7 +473,12 @@ async function submitBlock(form) {
 
   const reservation = findReservationForSlot(block.quadra, block.horario);
   if (reservation) {
-    const statusLabel = reservation.status === "confirmado" ? "confirmada" : "pendente";
+    const statusLabel =
+      reservation.status === "confirmado"
+        ? "confirmada"
+        : reservation.status === "faturado"
+          ? "faturada"
+          : "pendente";
     updateBanner(
       `Nao foi possivel bloquear ${block.quadra} às ${block.horario}: ja existe uma reserva ${statusLabel}.`,
       true
@@ -406,9 +500,6 @@ async function submitMutation(action, payload, fallbackUpdater) {
   if (APP_CONFIG.appsScriptWebhookUrl) {
     const response = await fetch(APP_CONFIG.appsScriptWebhookUrl, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify({ action, payload }),
     });
 
@@ -475,6 +566,80 @@ function isSameReservation(left, right) {
 
 function findReservationForSlot(courtId, time) {
   return state.reservations.find((entry) => entry.quadra === courtId && entry.horario === time);
+}
+
+function parseGvizResponse(payloadText) {
+  const start = payloadText.indexOf("{");
+  const end = payloadText.lastIndexOf("}");
+
+  if (start === -1 || end === -1) {
+    throw new Error("Resposta invalida do Google Sheets");
+  }
+
+  return JSON.parse(payloadText.slice(start, end + 1));
+}
+
+function getCellValue(cell) {
+  if (!cell) {
+    return "";
+  }
+
+  return String(cell.f ?? cell.v ?? "").trim();
+}
+
+function normalizeSheetDate(cell) {
+  const value = getCellValue(cell);
+  const dateMatch = value.match(/^Date\((\d+),(\d+),(\d+)\)$/);
+  if (dateMatch) {
+    const year = Number(dateMatch[1]);
+    const month = Number(dateMatch[2]) + 1;
+    const day = Number(dateMatch[3]);
+    return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  }
+
+  const brDateMatch = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (brDateMatch) {
+    return `${brDateMatch[3]}-${brDateMatch[2].padStart(2, "0")}-${brDateMatch[1].padStart(2, "0")}`;
+  }
+
+  return value;
+}
+
+function normalizeSheetTime(cell) {
+  const value = getCellValue(cell);
+  const dateTimeMatch = value.match(/^Date\(\d+,\d+,\d+,(\d+),(\d+),?(\d+)?\)$/);
+  if (dateTimeMatch) {
+    return `${dateTimeMatch[1].padStart(2, "0")}:${dateTimeMatch[2].padStart(2, "0")}`;
+  }
+
+  const timeMatch = value.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+  if (timeMatch) {
+    return `${timeMatch[1].padStart(2, "0")}:${timeMatch[2]}`;
+  }
+
+  return value;
+}
+
+function formatCpfInput(event) {
+  const digits = event.target.value.replace(/\D/g, "").slice(0, 11);
+  const parts = [];
+
+  if (digits.length > 0) {
+    parts.push(digits.slice(0, 3));
+  }
+  if (digits.length > 3) {
+    parts.push(digits.slice(3, 6));
+  }
+  if (digits.length > 6) {
+    parts.push(digits.slice(6, 9));
+  }
+
+  event.target.value =
+    parts.join(".") + (digits.length > 9 ? `-${digits.slice(9, 11)}` : "");
+}
+
+function getSelectedPayment() {
+  return String(new FormData(elements.bookingForm).get("payment") || "pix");
 }
 
 function getToday() {

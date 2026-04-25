@@ -7,12 +7,13 @@ Sistema estático em HTML, CSS e JavaScript puro para publicar no GitHub Pages.
 - `index.html`: interface pública e painel admin.
 - `styles.css`: layout mobile first e grade visual por quadra.
 - `app.js`: leitura da agenda, reservas, bloqueios e painel admin.
+- `instalar.html`: instruções para instalar como PWA no iPhone e Android.
 
 ## Configuração
 
 Edite `APP_CONFIG` em [`app.js`](/Users/filipe.gomes/Documents/PersonalWorkspace/aluguel%20de%20quadras/app.js) com:
 
-- `googleSheetsApiKey`: chave pública da Google Sheets API.
+- `googleSheetsApiKey`: mantida vazia; a leitura usa a planilha pública via gviz.
 - `spreadsheetId`: ID da planilha.
 - `appsScriptWebhookUrl`: URL do Apps Script para POST.
 - `adminPassword`: senha hardcoded do painel.
@@ -29,7 +30,10 @@ Colunas:
 - `horario`
 - `nome`
 - `telefone`
+- `cpf`
 - `status`
+- `pagamento`
+- `observacao`
 
 ### Aba `bloqueios`
 
@@ -55,7 +59,10 @@ O frontend envia `POST` JSON para o Apps Script neste formato:
     "horario": "07:00",
     "nome": "Cliente",
     "telefone": "(11) 99999-9999",
-    "status": "pendente"
+    "cpf": "000.000.000-00",
+    "status": "pendente",
+    "pagamento": "pix",
+    "observacao": ""
   }
 }
 ```

@@ -1,2 +1,2 @@
-data,quadra,horario,nome,telefone,status
-2026-04-24,BT1,07:00,Cliente Exemplo,(11) 99999-9999,pendente
+data,quadra,horario,nome,telefone,cpf,status,pagamento,observacao
+2026-04-24,BT1,07:00,Cliente Exemplo,(11) 99999-9999,000.000.000-00,pendente,pix,

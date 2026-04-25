@@ -23,11 +23,11 @@ Use estes arquivos para criar a planilha esperada pelo frontend.
 Preencha em [`app.js`](/Users/filipe.gomes/Documents/PersonalWorkspace/aluguel%20de%20quadras/app.js:1):
 
 - `spreadsheetId`
-- `googleSheetsApiKey`
+- `googleSheetsApiKey` deve permanecer vazio para leitura publica via gviz
 - `appsScriptWebhookUrl`
 - `pixKey`
 
 As colunas precisam permanecer nesta ordem:
 
-- `reservas`: `data`, `quadra`, `horario`, `nome`, `telefone`, `status`
+- `reservas`: `data`, `quadra`, `horario`, `nome`, `telefone`, `cpf`, `status`, `pagamento`, `observacao`
 - `bloqueios`: `data`, `quadra`, `horario`, `motivo`

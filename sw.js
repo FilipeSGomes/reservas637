@@ -1,7 +1,8 @@
-const CACHE_NAME = "app-637-v1";
+const CACHE_NAME = "app-637-v2";
 const APP_SHELL = [
   "./",
   "./index.html",
+  "./instalar.html",
   "./styles.css",
   "./app.js",
   "./manifest.webmanifest",
