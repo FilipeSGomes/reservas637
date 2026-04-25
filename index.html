@@ -71,7 +71,10 @@
           </label>
           <div class="legend">
             <span><i class="legend-dot available"></i>Disponível</span>
-            <span><i class="legend-dot unavailable"></i>Indisponível</span>
+            <span><i class="legend-dot pending"></i>Pendente</span>
+            <span><i class="legend-dot confirmed"></i>Confirmado</span>
+            <span><i class="legend-dot blocked"></i>Bloqueado</span>
+            <span><i class="legend-dot billed"></i>Faturado</span>
           </div>
         </section>
 
@@ -103,7 +106,12 @@
 
           <div class="admin-grid">
             <article class="admin-card">
-              <h3>Reservas</h3>
+              <div class="admin-card-heading">
+                <h3>Reservas</h3>
+                <button id="admin-refresh-button" class="mini-button" type="button">
+                  Atualizar pendências
+                </button>
+              </div>
               <div id="admin-reservations" class="admin-list"></div>
             </article>
 

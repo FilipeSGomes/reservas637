@@ -428,6 +428,18 @@ h1 {
   padding: 18px;
 }
 
+.admin-card-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.admin-card-heading h3 {
+  margin: 0;
+}
+
 .admin-list,
 .stack-form {
   display: grid;

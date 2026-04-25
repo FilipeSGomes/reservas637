@@ -63,6 +63,7 @@ const elements = {
   cancelBookingButton: document.querySelector("#cancel-booking-button"),
   adminAccessButton: document.querySelector("#admin-access-button"),
   adminExitButton: document.querySelector("#admin-exit-button"),
+  adminRefreshButton: document.querySelector("#admin-refresh-button"),
   adminPanel: document.querySelector("#admin-panel"),
   adminReservations: document.querySelector("#admin-reservations"),
   blockForm: document.querySelector("#block-form"),
@@ -109,6 +110,7 @@ function attachEvents() {
 
   elements.adminAccessButton.addEventListener("click", toggleAdminAccess);
   elements.adminExitButton.addEventListener("click", disableAdmin);
+  elements.adminRefreshButton.addEventListener("click", refreshAdminReservations);
 
   elements.blockForm.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -150,7 +152,7 @@ async function fetchSheetRows(sheetName) {
     return readLocalData()[sheetName === "reservas" ? "reservations" : "blocks"];
   }
 
-  const url = `${sheetsUrl}&sheet=${encodeURIComponent(sheetName)}`;
+  const url = `${sheetsUrl}&sheet=${encodeURIComponent(sheetName)}&cacheBust=${Date.now()}`;
   const response = await fetch(url);
   if (!response.ok) {
     throw new Error(`Erro ao ler aba ${sheetName}`);
@@ -167,8 +169,8 @@ async function fetchSheetRows(sheetName) {
       nome: getCellValue(row.c?.[3]),
       telefone: getCellValue(row.c?.[4]),
       cpf: getCellValue(row.c?.[5]),
-      status: getCellValue(row.c?.[6]) || "pendente",
-      pagamento: getCellValue(row.c?.[7]) || "pix",
+      status: normalizeReservationStatus(getCellValue(row.c?.[6])),
+      pagamento: normalizePayment(getCellValue(row.c?.[7])),
       observacao: getCellValue(row.c?.[8]),
     })).filter((row) => row.data && row.quadra && row.horario);
   }
@@ -225,8 +227,8 @@ function getSlotState(courtId, time) {
   const block = state.blocks.find((entry) => entry.quadra === courtId && entry.horario === time);
   if (block) {
     return {
-      status: "unavailable",
-      description: "Horário indisponível",
+      status: "blocked",
+      description: block.motivo || "Bloqueado",
     };
   }
 
@@ -241,21 +243,21 @@ function getSlotState(courtId, time) {
 
   if (reservation.status === "confirmado") {
     return {
-      status: "unavailable",
+      status: "confirmed",
       description: "Horário indisponível",
     };
   }
 
   if (reservation.status === "faturado") {
     return {
-      status: "unavailable",
+      status: "billed",
       description: "Horário indisponível",
     };
   }
 
   return {
-    status: "unavailable",
-    description: "Horário indisponível",
+    status: "pending",
+    description: "Aguardando confirmação",
   };
 }
 
@@ -405,8 +407,25 @@ async function toggleAdminAccess() {
   state.adminEnabled = true;
   elements.adminPanel.classList.remove("hidden");
   elements.adminPanel.setAttribute("aria-hidden", "false");
-  renderAdminReservations();
-  updateBanner("Painel admin liberado para a data selecionada.");
+  await refreshAdminReservations("Painel admin liberado para a data selecionada.");
+}
+
+async function refreshAdminReservations(successMessage = "Pendências atualizadas para a data selecionada.") {
+  if (!state.adminEnabled) {
+    return;
+  }
+
+  setButtonLoading(elements.adminRefreshButton, true, "Atualizando...");
+  try {
+    await loadAgenda();
+    updateBanner(successMessage);
+  } finally {
+    setButtonLoading(elements.adminRefreshButton, false);
+  }
+}
+
+function countPendingReservations() {
+  return state.reservations.filter((reservation) => reservation.status === "pendente").length;
 }
 
 function disableAdmin() {
@@ -422,8 +441,10 @@ function renderAdminReservations() {
     return;
   }
 
-  const dayItems = [...state.reservations]
-    .sort((a, b) => a.horario.localeCompare(b.horario) || a.quadra.localeCompare(b.quadra));
+  const dayItems = [...state.reservations].sort((a, b) => {
+    const pendingOrder = Number(b.status === "pendente") - Number(a.status === "pendente");
+    return pendingOrder || a.horario.localeCompare(b.horario) || a.quadra.localeCompare(b.quadra);
+  });
 
   if (!dayItems.length) {
     elements.adminReservations.innerHTML =
@@ -432,6 +453,13 @@ function renderAdminReservations() {
   }
 
   elements.adminReservations.innerHTML = "";
+  const pendingCount = countPendingReservations();
+  const summary = document.createElement("p");
+  summary.className = "fine-print";
+  summary.textContent =
+    pendingCount === 1 ? "1 reserva pendente de confirmação." : `${pendingCount} reservas pendentes de confirmação.`;
+  elements.adminReservations.appendChild(summary);
+
   dayItems.forEach((reservation) => {
     const item = document.createElement("article");
     item.className = "admin-item";
@@ -716,6 +744,24 @@ function normalizeSheetTime(cell) {
   }
 
   return value;
+}
+
+function normalizeReservationStatus(value) {
+  const normalized = String(value || "pendente").trim().toLowerCase();
+  if (["confirmado", "faturado", "pendente"].includes(normalized)) {
+    return normalized;
+  }
+
+  return "pendente";
+}
+
+function normalizePayment(value) {
+  const normalized = String(value || "pix").trim().toLowerCase();
+  if (normalized === "faturamento") {
+    return "faturamento";
+  }
+
+  return "pix";
 }
 
 function formatCpfInput(event) {
