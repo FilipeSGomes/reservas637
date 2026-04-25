@@ -34,6 +34,7 @@ const state = {
   reservations: [],
   blocks: [],
   adminEnabled: false,
+  pendingOperations: new Set(),
 };
 
 const elements = {
@@ -98,6 +99,11 @@ function attachEvents() {
 
   elements.bookingForm.addEventListener("submit", async (event) => {
     event.preventDefault();
+    if (elements.bookingSubmitButton.classList.contains("hidden")) {
+      showPaymentStep();
+      return;
+    }
+
     await submitBooking();
   });
 
@@ -340,24 +346,48 @@ async function submitBooking() {
     pagamento,
     observacao: String(formData.get("observation") || "").trim(),
   };
+  const operationKey = `reservation:create:${booking.data}:${booking.quadra}:${booking.horario}`;
 
   if (!booking.nome || !booking.telefone || !booking.cpf) {
     updateBanner("Preencha nome, telefone e CPF antes de enviar a reserva.", true);
     return;
   }
 
-  await submitMutation("reservation:create", booking, ({ reservations, blocks }) => ({
-    reservations: [...reservations, booking],
-    blocks,
-  }));
+  if (findReservationForSlot(booking.quadra, booking.horario)) {
+    updateBanner("Este horário já possui uma reserva. Atualize a agenda e escolha outro horário.", true);
+    return;
+  }
 
-  closeModal();
-  await loadAgenda();
-  updateBanner(
-    booking.status === "faturado"
-      ? `Reserva faturada para ${booking.quadra} às ${booking.horario}.`
-      : `Reserva enviada para ${booking.quadra} às ${booking.horario}. Status pendente até confirmação do PIX.`
-  );
+  if (!startPendingOperation(operationKey)) {
+    updateBanner("Reserva já está sendo enviada. Aguarde a confirmação.", true);
+    return;
+  }
+
+  setButtonLoading(elements.bookingSubmitButton, true, "Enviando...");
+
+  try {
+    await submitMutation("reservation:create", booking, ({ reservations, blocks }) => ({
+      reservations: [...reservations, booking],
+      blocks,
+    }));
+
+    closeModal();
+    await loadAgenda();
+    updateBanner(
+      booking.status === "faturado"
+        ? `Reserva faturada para ${booking.quadra} às ${booking.horario}.`
+        : `Reserva enviada para ${booking.quadra} às ${booking.horario}. Status pendente até confirmação do PIX.`
+    );
+  } catch (error) {
+    console.error(error);
+    updateBanner(
+      "Nao foi possivel confirmar o envio da reserva. Atualize a agenda antes de tentar novamente.",
+      true
+    );
+  } finally {
+    finishPendingOperation(operationKey);
+    setButtonLoading(elements.bookingSubmitButton, false);
+  }
 }
 
 async function toggleAdminAccess() {
@@ -435,7 +465,7 @@ function renderAdminReservations() {
       confirmButton.type = "button";
       confirmButton.textContent = "Confirmar PIX";
       confirmButton.addEventListener("click", async () => {
-        await confirmReservation(reservation);
+        await confirmReservation(reservation, confirmButton);
       });
 
       actions.appendChild(confirmButton);
@@ -446,21 +476,37 @@ function renderAdminReservations() {
   });
 }
 
-async function confirmReservation(reservation) {
-  const updatedReservation = { ...reservation, status: "confirmado" };
-  await submitMutation(
-    "reservation:confirm",
-    updatedReservation,
-    ({ reservations, blocks }) => ({
-      reservations: reservations.map((entry) =>
-        isSameReservation(entry, reservation) ? updatedReservation : entry
-      ),
-      blocks,
-    })
-  );
+async function confirmReservation(reservation, button) {
+  const operationKey = `reservation:confirm:${reservation.data}:${reservation.quadra}:${reservation.horario}:${reservation.telefone}`;
+  if (!startPendingOperation(operationKey)) {
+    updateBanner("Confirmação já está em andamento. Aguarde.", true);
+    return;
+  }
 
-  await loadAgenda();
-  updateBanner(`Reserva ${reservation.quadra} às ${reservation.horario} confirmada.`);
+  const updatedReservation = { ...reservation, status: "confirmado" };
+  setButtonLoading(button, true, "Confirmando...");
+
+  try {
+    await submitMutation(
+      "reservation:confirm",
+      updatedReservation,
+      ({ reservations, blocks }) => ({
+        reservations: reservations.map((entry) =>
+          isSameReservation(entry, reservation) ? updatedReservation : entry
+        ),
+        blocks,
+      })
+    );
+
+    await loadAgenda();
+    updateBanner(`Reserva ${reservation.quadra} às ${reservation.horario} confirmada.`);
+  } catch (error) {
+    console.error(error);
+    updateBanner("Nao foi possivel confirmar o PIX. Atualize a agenda antes de tentar novamente.", true);
+  } finally {
+    finishPendingOperation(operationKey);
+    setButtonLoading(button, false);
+  }
 }
 
 async function submitBlock(form) {
@@ -471,6 +517,7 @@ async function submitBlock(form) {
     horario: String(formData.get("time")),
     motivo: String(formData.get("reason")).trim(),
   };
+  const operationKey = `block:create:${block.data}:${block.quadra}:${block.horario}`;
 
   const reservation = findReservationForSlot(block.quadra, block.horario);
   if (reservation) {
@@ -487,14 +534,33 @@ async function submitBlock(form) {
     return;
   }
 
-  await submitMutation("block:create", block, ({ reservations, blocks }) => ({
-    reservations,
-    blocks: [...blocks, block],
-  }));
+  if (!startPendingOperation(operationKey)) {
+    updateBanner("Bloqueio já está sendo registrado. Aguarde.", true);
+    return;
+  }
 
-  form.reset();
-  await loadAgenda();
-  updateBanner(`Bloqueio registrado para ${block.quadra} às ${block.horario}.`);
+  const submitButton = form.querySelector('button[type="submit"]');
+  setButtonLoading(submitButton, true, "Registrando...");
+
+  try {
+    await submitMutation("block:create", block, ({ reservations, blocks }) => ({
+      reservations,
+      blocks: [...blocks, block],
+    }));
+
+    form.reset();
+    await loadAgenda();
+    updateBanner(`Bloqueio registrado para ${block.quadra} às ${block.horario}.`);
+  } catch (error) {
+    console.error(error);
+    updateBanner(
+      "Nao foi possivel confirmar o bloqueio. Atualize a agenda antes de tentar novamente.",
+      true
+    );
+  } finally {
+    finishPendingOperation(operationKey);
+    setButtonLoading(submitButton, false);
+  }
 }
 
 async function submitMutation(action, payload, fallbackUpdater) {
@@ -503,12 +569,17 @@ async function submitMutation(action, payload, fallbackUpdater) {
       method: "POST",
       body: JSON.stringify({ action, payload }),
     });
+    const result = await response.json().catch(() => null);
 
     if (!response.ok) {
       throw new Error("Falha ao enviar webhook do Apps Script");
     }
 
-    return;
+    if (result && result.ok === false) {
+      throw new Error(result.error || "Webhook do Apps Script recusou a operacao");
+    }
+
+    return result;
   }
 
   const stored = readLocalData();
@@ -554,6 +625,32 @@ function readLocalData() {
 function updateBanner(message, isError = false) {
   elements.statusBanner.textContent = message;
   elements.statusBanner.classList.toggle("error", isError);
+}
+
+function startPendingOperation(key) {
+  if (state.pendingOperations.has(key)) {
+    return false;
+  }
+
+  state.pendingOperations.add(key);
+  return true;
+}
+
+function finishPendingOperation(key) {
+  state.pendingOperations.delete(key);
+}
+
+function setButtonLoading(button, isLoading, loadingText = "") {
+  if (!button) {
+    return;
+  }
+
+  if (!button.dataset.defaultText) {
+    button.dataset.defaultText = button.textContent;
+  }
+
+  button.disabled = isLoading;
+  button.textContent = isLoading ? loadingText : button.dataset.defaultText;
 }
 
 function isSameReservation(left, right) {
