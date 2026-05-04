@@ -1,0 +1,9 @@
+# FISAM AI Governance — Audit Log
+# Formato: TIMESTAMP | OPERADOR | EVENTO | DETALHE
+# NÃO edite este arquivo manualmente.
+#
+2026-04-27T09:26:19 | filipe.gomes | BOOTSTRAP_START | projeto=/Users/filipe.gomes/Documents/PersonalWorkspace/reservas637 risk=R0 mode=evolve
+2026-04-27T09:26:19 | filipe.gomes | BOOTSTRAP_COMPLETE | agent_dir=/Users/filipe.gomes/Documents/PersonalWorkspace/reservas637/.codex-agent scripts=5
+2026-04-27T09:27:10 | filipe.gomes | SCAN_START | project=/Users/filipe.gomes/Documents/PersonalWorkspace/reservas637
+2026-04-27T09:27:11 | filipe.gomes | DISCOVERY_START | prompt=/Users/filipe.gomes/Documents/PersonalWorkspace/reservas637/.codex-agent/prompts/00-descoberta-inicial.md
+2026-04-27T09:31:20 | filipe.gomes | DISCOVERY_END | status=completed

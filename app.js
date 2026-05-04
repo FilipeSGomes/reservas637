@@ -35,6 +35,8 @@ const DEFAULT_SETTINGS = {
   openingEnd: "22:00",
 };
 
+let loadingOverlayCounter = 0;
+
 const state = {
   selectedDate: getToday(),
   selectedSlot: null,
@@ -85,6 +87,10 @@ const elements = {
 boot();
 
 function boot() {
+  ensureLoadingOverlay();
+  window.showLoading = showLoading;
+  window.hideLoading = hideLoading;
+
   if (!isAdminRoute()) {
     registerServiceWorker();
   }
@@ -191,12 +197,17 @@ async function fetchSheetRows(sheetName) {
   }
 
   const url = `${sheetsUrl}&sheet=${encodeURIComponent(sheetName)}&cacheBust=${Date.now()}`;
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Erro ao ler aba ${sheetName}`);
+  let payloadText = "";
+  showLoading();
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Erro ao ler aba ${sheetName}`);
+    }
+    payloadText = await response.text();
+  } finally {
+    hideLoading();
   }
-
-  const payloadText = await response.text();
   const payload = parseGvizResponse(payloadText);
   const rows = payload.table?.rows ?? [];
   if (sheetName === "reservas") {
@@ -745,11 +756,18 @@ async function submitFullDayBlock(form) {
 
 async function submitMutation(action, payload, fallbackUpdater) {
   if (APP_CONFIG.appsScriptWebhookUrl) {
-    const response = await fetch(APP_CONFIG.appsScriptWebhookUrl, {
-      method: "POST",
-      body: JSON.stringify({ action, payload }),
-    });
-    const result = await response.json().catch(() => null);
+    let response;
+    let result;
+    showLoading();
+    try {
+      response = await fetch(APP_CONFIG.appsScriptWebhookUrl, {
+        method: "POST",
+        body: JSON.stringify({ action, payload }),
+      });
+      result = await response.json().catch(() => null);
+    } finally {
+      hideLoading();
+    }
 
     if (!response.ok) {
       throw new Error("Falha ao enviar webhook do Apps Script");
@@ -1083,6 +1101,46 @@ function updateAdminRouteUI() {
 
 function isAdminRoute() {
   return window.location.pathname === "/admin" || window.location.pathname === "/admin/";
+}
+
+function ensureLoadingOverlay() {
+  if (document.querySelector("#global-loading-overlay")) {
+    return;
+  }
+
+  const overlay = document.createElement("div");
+  overlay.id = "global-loading-overlay";
+  overlay.className = "global-loading-overlay hidden";
+  overlay.setAttribute("aria-hidden", "true");
+  overlay.innerHTML = `
+    <div class="global-loading-content" role="status" aria-live="polite" aria-label="Carregando">
+      <svg class="loading-gear" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path fill="#ffffff" d="M36.8 2h-9.6l-1.2 7.5a23.2 23.2 0 0 0-5.6 2.3l-6.3-4.2-6.8 6.8 4.2 6.3a23.2 23.2 0 0 0-2.3 5.6L2 27.2v9.6l7.5 1.2a23.2 23.2 0 0 0 2.3 5.6l-4.2 6.3 6.8 6.8 6.3-4.2a23.2 23.2 0 0 0 5.6 2.3L27.2 62h9.6l1.2-7.5a23.2 23.2 0 0 0 5.6-2.3l6.3 4.2 6.8-6.8-4.2-6.3a23.2 23.2 0 0 0 2.3-5.6L62 36.8v-9.6l-7.5-1.2a23.2 23.2 0 0 0-2.3-5.6l4.2-6.3-6.8-6.8-6.3 4.2a23.2 23.2 0 0 0-5.6-2.3L36.8 2zm-4.8 17A13 13 0 1 1 19 32 13 13 0 0 1 32 19zm0 7.5a5.5 5.5 0 1 0 5.5 5.5 5.5 5.5 0 0 0-5.5-5.5z"/>
+      </svg>
+      <p>Aguarde...</p>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+}
+
+function showLoading() {
+  loadingOverlayCounter += 1;
+  const overlay = document.querySelector("#global-loading-overlay");
+  if (!overlay) {
+    return;
+  }
+  overlay.classList.remove("hidden");
+  overlay.setAttribute("aria-hidden", "false");
+}
+
+function hideLoading() {
+  loadingOverlayCounter = Math.max(0, loadingOverlayCounter - 1);
+  const overlay = document.querySelector("#global-loading-overlay");
+  if (!overlay || loadingOverlayCounter > 0) {
+    return;
+  }
+  overlay.classList.add("hidden");
+  overlay.setAttribute("aria-hidden", "true");
 }
 
 function getToday() {

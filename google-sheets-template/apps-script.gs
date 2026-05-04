@@ -35,6 +35,7 @@ function doPost(e) {
 
 function appendReservation_(spreadsheet, payload) {
   validateRequired_(payload, ["data", "quadra", "horario", "nome", "telefone", "cpf"]);
+  validateNotPastDate_(payload.data);
 
   var reservationsSheet = spreadsheet.getSheetByName("reservas");
   var blocksSheet = spreadsheet.getSheetByName("bloqueios");
@@ -196,6 +197,15 @@ function validateRequired_(payload, fields) {
       throw new Error("Campo obrigatorio ausente: " + field + ".");
     }
   });
+}
+
+function validateNotPastDate_(value) {
+  var date = normalizeDate_(value);
+  var today = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd");
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(date) && date < today) {
+    throw new Error("Nao e possivel criar reserva em data passada.");
+  }
 }
 
 function normalizeDate_(value) {

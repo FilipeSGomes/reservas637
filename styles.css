@@ -472,6 +472,48 @@ h1 {
   display: none;
 }
 
+.global-loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: all;
+}
+
+.global-loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.loading-gear {
+  width: 48px;
+  height: 48px;
+  animation: loading-gear-rotate 1.2s linear infinite;
+  transform-origin: center;
+}
+
+.global-loading-content p {
+  margin: 0;
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 400;
+}
+
+@keyframes loading-gear-rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .admin-grid {
   display: grid;
   gap: 16px;
