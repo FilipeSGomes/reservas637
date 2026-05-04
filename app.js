@@ -38,6 +38,7 @@ const DEFAULT_SETTINGS = {
 
 let loadingOverlayCounter = 0;
 let loadingOverlayTimeoutId = null;
+let lastModalTrigger = null;
 
 const state = {
   selectedDate: getToday(),
@@ -61,6 +62,7 @@ const elements = {
   bookingConfirmationMeta: document.querySelector("#booking-confirmation-meta"),
   bookingConfirmationNextStep: document.querySelector("#booking-confirmation-next-step"),
   bookingConfirmationClose: document.querySelector("#booking-confirmation-close"),
+  bookingConfirmationRepeat: document.querySelector("#booking-confirmation-repeat"),
   scheduleGrid: document.querySelector("#schedule-grid"),
   refreshButton: document.querySelector("#refresh-button"),
   preBookingModal: document.querySelector("#pre-booking-modal"),
@@ -109,6 +111,9 @@ function boot() {
   }
   elements.dateInput.min = getToday();
   elements.dateInput.value = state.selectedDate;
+  if (elements.bookingForm) {
+    elements.bookingForm.noValidate = true;
+  }
   applySettings();
   populateSelects();
   attachEvents();
@@ -140,6 +145,10 @@ function attachEvents() {
   elements.bookingNextButton?.addEventListener("click", showPaymentStep);
   elements.bookingReuseButton?.addEventListener("click", reuseLastBookingContact);
   elements.bookingForm?.querySelector('[name="cpf"]')?.addEventListener("input", formatCpfInput);
+  elements.bookingForm?.querySelector('[name="phone"]')?.addEventListener("input", formatPhoneInput);
+  elements.bookingForm?.querySelectorAll('input[name="name"], input[name="phone"], input[name="cpf"]')?.forEach((input) => {
+    input.addEventListener("input", () => clearFieldError(input.name));
+  });
   elements.bookingForm?.querySelectorAll('[name="payment"]')?.forEach((input) => {
     input.addEventListener("change", updatePaymentView);
   });
@@ -162,6 +171,13 @@ function attachEvents() {
     openPreBookingModal(nextSlot.court, nextSlot.time);
   });
   elements.bookingConfirmationClose?.addEventListener("click", hideBookingConfirmation);
+  elements.bookingConfirmationRepeat?.addEventListener("click", () => {
+    hideBookingConfirmation();
+    elements.scheduleGrid?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+  elements.preBookingModal?.addEventListener("close", onModalClosed);
+  elements.bookingModal?.addEventListener("close", onModalClosed);
+  document.addEventListener("keydown", handleEscape);
 
   elements.adminAccessButton?.addEventListener("click", toggleAdminAccess);
   elements.adminLoginForm?.addEventListener("submit", async (event) => {
@@ -187,6 +203,7 @@ function attachEvents() {
 
 async function loadAgenda() {
   updateBanner("Atualizando horários disponíveis...");
+  elements.quickSlot?.classList.add("loading");
   const [reservationsResult, blocksResult] = await Promise.allSettled([
     fetchSheetRows("reservas"),
     fetchSheetRows("bloqueios"),
@@ -211,6 +228,7 @@ async function loadAgenda() {
   renderSchedule();
   renderAdminReservations();
   renderQuickSlotCTA();
+  elements.quickSlot?.classList.remove("loading");
 
   if (reservationsResult.status === "fulfilled" && blocksResult.status === "fulfilled") {
     updateBanner(
@@ -313,6 +331,14 @@ function renderSchedule() {
       card.type = "button";
       card.className = `slot-card ${slotState.status}`;
       card.disabled = slotState.status !== "available";
+      card.setAttribute("aria-disabled", String(slotState.status !== "available"));
+      if (
+        state.selectedSlot &&
+        state.selectedSlot.courtId === court.id &&
+        state.selectedSlot.time === time
+      ) {
+        card.classList.add("selected");
+      }
       card.innerHTML = `
         <span class="slot-card-top">
           <span class="slot-card-title">${time}</span>
@@ -401,13 +427,18 @@ function openPreBookingModal(court, time) {
   }
 
   state.selectedSlot = { courtId: court.id, courtName: court.name, time };
+  renderSchedule();
   elements.preBookingTitle.textContent = `${court.name} • ${formatDate(state.selectedDate)} • ${time}`;
   elements.preBookingAmount.textContent = state.settings.pricingByCourt[court.id] ?? "Consulte";
+  lastModalTrigger = document.activeElement;
+  document.body.classList.add("modal-open");
   elements.preBookingModal?.showModal();
+  elements.continueBookingButton?.focus();
 }
 
 function closePreBookingModal() {
   state.selectedSlot = null;
+  renderSchedule();
   elements.preBookingModal?.close();
 }
 
@@ -424,11 +455,15 @@ function continueToBookingForm() {
   elements.pixKey.textContent = state.settings.pixKey;
   elements.pixAmount.textContent = state.settings.pricingByCourt[state.selectedSlot.courtId] ?? "Consulte";
   updatePaymentView();
+  lastModalTrigger = document.activeElement;
+  document.body.classList.add("modal-open");
   elements.bookingModal?.showModal();
+  elements.bookingForm?.elements?.name?.focus();
 }
 
 function closeModal() {
   state.selectedSlot = null;
+  renderSchedule();
   elements.bookingModal?.close();
 }
 
@@ -440,7 +475,7 @@ function showRegistrationStep() {
 }
 
 function showPaymentStep() {
-  if (!elements.bookingForm.reportValidity()) {
+  if (!validateRegistrationFields()) {
     return;
   }
 
@@ -493,8 +528,8 @@ async function submitBooking() {
   };
   const operationKey = `reservation:create:${booking.data}:${booking.quadra}:${booking.horario}`;
 
-  if (!booking.nome || !booking.telefone || !booking.cpf) {
-    updateBanner("Preencha nome, telefone e CPF antes de enviar a reserva.", true);
+  if (!validateRegistrationFields()) {
+    updateBanner("Revise os campos obrigatórios para continuar.", true);
     return;
   }
 
@@ -1016,6 +1051,19 @@ function formatCpfInput(event) {
     parts.join(".") + (digits.length > 9 ? `-${digits.slice(9, 11)}` : "");
 }
 
+function formatPhoneInput(event) {
+  const digits = event.target.value.replace(/\D/g, "").slice(0, 11);
+  if (digits.length <= 10) {
+    event.target.value = digits.replace(/(\d{2})(\d{4})(\d{0,4})/, (_, ddd, prefix, suffix) =>
+      suffix ? `(${ddd}) ${prefix}-${suffix}` : `(${ddd}) ${prefix}`
+    );
+    return;
+  }
+  event.target.value = digits.replace(/(\d{2})(\d{5})(\d{0,4})/, (_, ddd, prefix, suffix) =>
+    suffix ? `(${ddd}) ${prefix}-${suffix}` : `(${ddd}) ${prefix}`
+  );
+}
+
 function getSelectedPayment() {
   return String(new FormData(elements.bookingForm).get("payment") || "pix");
 }
@@ -1162,7 +1210,7 @@ function showBookingConfirmation(booking) {
   if (!elements.bookingConfirmation) {
     return;
   }
-  const statusText = booking.status === "faturado" ? "Reserva confirmada em faturamento" : "Aguardando confirmação do PIX";
+  const statusText = booking.status === "faturado" ? "Solicitação em faturamento" : "Solicitação enviada (pendente de confirmação)";
   const nextStep = booking.status === "faturado"
     ? "Próximo passo: compareça no horário reservado e aproveite sua quadra."
     : "Próximo passo: envie o comprovante no WhatsApp para confirmar mais rápido.";
@@ -1336,4 +1384,81 @@ function registerServiceWorker() {
       console.error("Falha ao registrar service worker", error);
     });
   });
+}
+
+function validateRegistrationFields() {
+  if (!elements.bookingForm) {
+    return true;
+  }
+  const name = elements.bookingForm.elements.name;
+  const phone = elements.bookingForm.elements.phone;
+  const cpf = elements.bookingForm.elements.cpf;
+  let valid = true;
+
+  if (!String(name.value || "").trim() || String(name.value || "").trim().length < 3) {
+    setFieldError(name, "Informe seu nome completo.");
+    valid = false;
+  }
+
+  const phoneDigits = String(phone.value || "").replace(/\D/g, "");
+  if (phoneDigits.length < 10) {
+    setFieldError(phone, "Informe um telefone válido com DDD.");
+    valid = false;
+  }
+
+  const cpfDigits = String(cpf.value || "").replace(/\D/g, "");
+  if (cpfDigits.length !== 11) {
+    setFieldError(cpf, "Informe um CPF válido com 11 números.");
+    valid = false;
+  }
+
+  if (!valid) {
+    const firstError = elements.bookingForm.querySelector(".field.has-error input");
+    firstError?.focus();
+  }
+  return valid;
+}
+
+function setFieldError(input, message) {
+  const field = input.closest(".field");
+  if (!field) {
+    return;
+  }
+  field.classList.add("has-error");
+  const errorEl = field.querySelector(`.field-error[data-error-for="${input.name}"]`);
+  if (errorEl) {
+    errorEl.textContent = message;
+  }
+}
+
+function clearFieldError(name) {
+  const input = elements.bookingForm?.elements?.[name];
+  if (!input) {
+    return;
+  }
+  const field = input.closest(".field");
+  field?.classList.remove("has-error");
+  const errorEl = field?.querySelector(`.field-error[data-error-for="${name}"]`);
+  if (errorEl) {
+    errorEl.textContent = "";
+  }
+}
+
+function onModalClosed() {
+  document.body.classList.remove("modal-open");
+  if (lastModalTrigger && typeof lastModalTrigger.focus === "function") {
+    lastModalTrigger.focus();
+  }
+}
+
+function handleEscape(event) {
+  if (event.key !== "Escape") {
+    return;
+  }
+  if (elements.bookingModal?.open) {
+    closeModal();
+  }
+  if (elements.preBookingModal?.open) {
+    closePreBookingModal();
+  }
 }

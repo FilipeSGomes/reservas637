@@ -2,7 +2,7 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#676b2a" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -30,16 +30,16 @@
           <p class="eyebrow">637 Cervejaria • Desde 2017</p>
           <h1>Tênis, Beach Tennis e cerveja artesanal no mesmo lugar.</h1>
           <p class="hero-copy">
-            Um espaço criado para fabricar cerveja artesanal de qualidade e
-            difundir duas paixões: Tênis &amp; Cerveja. Consulte a grade do dia,
-            escolha sua quadra e envie a solicitação em menos de um minuto.
+            Consulte a agenda do dia, escolha sua quadra e envie sua solicitação em menos de um minuto.
           </p>
           <div class="hero-tags" aria-label="Destaques da 637 Cervejaria">
-            <span>637 Cervejaria</span>
-            <span>Cerveja artesanal</span>
-            <span>Tênis &amp; Cerveja</span>
+            <span>Reserva rápida</span>
+            <span>07h às 22h</span>
           </div>
-          <a class="install-link" href="instalar.html">📲 Instale o app</a>
+          <div class="hero-actions">
+            <a class="primary-button hero-cta-button" href="#schedule-grid">Reservar quadra</a>
+            <a class="install-link secondary-install-link" href="instalar.html">Adicionar à tela inicial</a>
+          </div>
         </div>
         <div class="hero-aside">
           <figure class="hero-logo">
@@ -62,12 +62,12 @@
             <span>Data</span>
             <input id="date-input" type="date" />
           </label>
-          <div class="legend">
-            <span><i class="legend-dot available"></i>Disponível</span>
-            <span><i class="legend-dot pending"></i>Pendente</span>
-            <span><i class="legend-dot confirmed"></i>Confirmado</span>
-            <span><i class="legend-dot blocked"></i>Bloqueado</span>
-            <span><i class="legend-dot billed"></i>Faturado</span>
+          <div class="legend" aria-label="Legenda de status da agenda">
+            <span class="legend-chip"><i class="legend-dot available"></i>Disponível</span>
+            <span class="legend-chip"><i class="legend-dot pending"></i>Pendente</span>
+            <span class="legend-chip"><i class="legend-dot confirmed"></i>Confirmado</span>
+            <span class="legend-chip"><i class="legend-dot blocked"></i>Bloqueado</span>
+            <span class="legend-chip"><i class="legend-dot billed"></i>Faturado</span>
           </div>
         </section>
 
@@ -77,20 +77,24 @@
             <p class="eyebrow">Próximo Horário Livre</p>
             <h3 id="quick-slot-title">Buscando o melhor horário para você...</h3>
             <p id="quick-slot-meta" class="fine-print"></p>
+            <div class="quick-slot-skeleton" aria-hidden="true"></div>
           </div>
           <button id="quick-slot-book-button" class="primary-button" type="button">
-            Reservar agora
+            Reservar este horário
           </button>
         </section>
 
         <section id="booking-confirmation" class="booking-confirmation hidden" aria-live="polite">
           <div>
-            <p class="eyebrow">Reserva Enviada</p>
-            <h3 id="booking-confirmation-title">Tudo certo com seu pedido</h3>
+            <p class="eyebrow">Solicitação enviada</p>
+            <h3 id="booking-confirmation-title">Resumo da sua reserva</h3>
             <p id="booking-confirmation-meta" class="fine-print"></p>
             <p id="booking-confirmation-next-step" class="fine-print"></p>
           </div>
-          <button id="booking-confirmation-close" class="ghost-button" type="button">Fechar</button>
+          <div class="booking-confirmation-actions">
+            <button id="booking-confirmation-close" class="ghost-button" type="button">Fechar</button>
+            <button id="booking-confirmation-repeat" class="primary-button" type="button">Reservar novamente</button>
+          </div>
         </section>
 
         <section class="schedule-section">
@@ -109,14 +113,14 @@
       </main>
     </div>
 
-    <dialog id="pre-booking-modal" class="modal">
+    <dialog id="pre-booking-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="pre-booking-title">
       <div class="modal-card">
         <div class="modal-header">
           <div>
             <p class="eyebrow">Pré-reserva</p>
             <h3 id="pre-booking-title">Horário selecionado</h3>
           </div>
-          <button id="close-pre-booking-button" class="icon-button" type="button">
+          <button id="close-pre-booking-button" class="icon-button" type="button" aria-label="Fechar pré-reserva">
             ×
           </button>
         </div>
@@ -135,20 +139,20 @@
             Cancelar
           </button>
           <button class="primary-button" id="continue-booking-button" type="button">
-            Continuar reserva
+            Continuar
           </button>
         </div>
       </div>
     </dialog>
 
-    <dialog id="booking-modal" class="modal">
+    <dialog id="booking-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="booking-slot-title">
       <form id="booking-form" class="modal-card" method="dialog">
         <div class="modal-header">
           <div>
             <p class="eyebrow">Nova reserva</p>
             <h3 id="booking-slot-title">Horário selecionado</h3>
           </div>
-          <button id="close-modal-button" class="icon-button" type="button">
+          <button id="close-modal-button" class="icon-button" type="button" aria-label="Fechar formulário de reserva">
             ×
           </button>
         </div>
@@ -156,7 +160,8 @@
         <div id="booking-registration-step" class="booking-step">
           <label class="field">
             <span>Nome</span>
-            <input name="name" type="text" minlength="3" required />
+            <input name="name" type="text" minlength="3" placeholder="Seu nome completo" autocomplete="name" required />
+            <small class="field-error" data-error-for="name" aria-live="polite"></small>
           </label>
           <label class="field">
             <span>Telefone</span>
@@ -165,8 +170,10 @@
               type="tel"
               inputmode="tel"
               placeholder="(11) 99999-9999"
+              autocomplete="tel"
               required
             />
+            <small class="field-error" data-error-for="phone" aria-live="polite"></small>
           </label>
           <label class="field">
             <span>CPF</span>
@@ -176,7 +183,18 @@
               inputmode="numeric"
               maxlength="14"
               placeholder="000.000.000-00"
+              autocomplete="off"
               required
+            />
+            <small class="field-error" data-error-for="cpf" aria-live="polite"></small>
+          </label>
+          <label class="field">
+            <span>Observação opcional</span>
+            <input
+              name="observation"
+              type="text"
+              maxlength="120"
+              placeholder="Ex.: lançar na conta da empresa"
             />
           </label>
           <button class="secondary-button" id="booking-reuse-button" type="button">
@@ -217,15 +235,6 @@
             <p>
               Valor será lançado na sua conta. Pagamento no final do mês.
             </p>
-            <label class="field">
-              <span>Observação opcional</span>
-              <input
-                name="observation"
-                type="text"
-                maxlength="120"
-                placeholder="Ex.: lançar na conta da empresa"
-              />
-            </label>
           </div>
         </div>
 
@@ -237,7 +246,7 @@
             Escolher pagamento
           </button>
           <button class="primary-button hidden" id="booking-submit-button" type="submit">
-            Enviar reserva
+            Enviar solicitação
           </button>
         </div>
       </form>
