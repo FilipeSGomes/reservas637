@@ -25,6 +25,7 @@ const LOCAL_STORAGE_KEY = "quadras-local-fallback";
 const SETTINGS_STORAGE_KEY = "quadras-admin-settings";
 const FULL_DAY_BLOCK_SENTINEL = "__FULL_DAY__";
 const ADMIN_AUTH_STORAGE_KEY = "quadras-admin-auth";
+const LAST_BOOKING_CONTACT_KEY = "quadras-last-booking-contact";
 
 const DEFAULT_SETTINGS = {
   pixKey: APP_CONFIG.pixKey,
@@ -51,6 +52,15 @@ const state = {
 const elements = {
   dateInput: document.querySelector("#date-input"),
   statusBanner: document.querySelector("#status-banner"),
+  quickSlot: document.querySelector("#quick-slot"),
+  quickSlotTitle: document.querySelector("#quick-slot-title"),
+  quickSlotMeta: document.querySelector("#quick-slot-meta"),
+  quickSlotBookButton: document.querySelector("#quick-slot-book-button"),
+  bookingConfirmation: document.querySelector("#booking-confirmation"),
+  bookingConfirmationTitle: document.querySelector("#booking-confirmation-title"),
+  bookingConfirmationMeta: document.querySelector("#booking-confirmation-meta"),
+  bookingConfirmationNextStep: document.querySelector("#booking-confirmation-next-step"),
+  bookingConfirmationClose: document.querySelector("#booking-confirmation-close"),
   scheduleGrid: document.querySelector("#schedule-grid"),
   refreshButton: document.querySelector("#refresh-button"),
   preBookingModal: document.querySelector("#pre-booking-modal"),
@@ -66,7 +76,9 @@ const elements = {
   bookingPaymentStep: document.querySelector("#booking-payment-step"),
   bookingNextButton: document.querySelector("#booking-next-button"),
   bookingSubmitButton: document.querySelector("#booking-submit-button"),
+  bookingReuseButton: document.querySelector("#booking-reuse-button"),
   pixPaymentBox: document.querySelector("#pix-payment-box"),
+  pixWhatsappLink: document.querySelector("#pix-whatsapp-link"),
   billingPaymentBox: document.querySelector("#billing-payment-box"),
   pixKey: document.querySelector("#pix-key"),
   pixAmount: document.querySelector("#pix-amount"),
@@ -126,6 +138,7 @@ function attachEvents() {
   elements.closeModalButton?.addEventListener("click", closeModal);
   elements.cancelBookingButton?.addEventListener("click", closeModal);
   elements.bookingNextButton?.addEventListener("click", showPaymentStep);
+  elements.bookingReuseButton?.addEventListener("click", reuseLastBookingContact);
   elements.bookingForm?.querySelector('[name="cpf"]')?.addEventListener("input", formatCpfInput);
   elements.bookingForm?.querySelectorAll('[name="payment"]')?.forEach((input) => {
     input.addEventListener("change", updatePaymentView);
@@ -140,6 +153,15 @@ function attachEvents() {
 
     await submitBooking();
   });
+  elements.quickSlotBookButton?.addEventListener("click", () => {
+    const nextSlot = findNextAvailableSlot();
+    if (!nextSlot) {
+      updateBanner("No momento, não há horários livres para a data selecionada.", true);
+      return;
+    }
+    openPreBookingModal(nextSlot.court, nextSlot.time);
+  });
+  elements.bookingConfirmationClose?.addEventListener("click", hideBookingConfirmation);
 
   elements.adminAccessButton?.addEventListener("click", toggleAdminAccess);
   elements.adminLoginForm?.addEventListener("submit", async (event) => {
@@ -164,7 +186,7 @@ function attachEvents() {
 }
 
 async function loadAgenda() {
-  updateBanner("Atualizando grade...");
+  updateBanner("Atualizando horários disponíveis...");
   const [reservationsResult, blocksResult] = await Promise.allSettled([
     fetchSheetRows("reservas"),
     fetchSheetRows("bloqueios"),
@@ -188,6 +210,7 @@ async function loadAgenda() {
 
   renderSchedule();
   renderAdminReservations();
+  renderQuickSlotCTA();
 
   if (reservationsResult.status === "fulfilled" && blocksResult.status === "fulfilled") {
     updateBanner(
@@ -199,16 +222,16 @@ async function loadAgenda() {
   }
 
   if (reservationsResult.status === "rejected" && blocksResult.status === "rejected") {
-    updateBanner("Falha ao carregar reservas e bloqueios. Usando dados locais quando disponíveis.", true);
+    updateBanner("Instabilidade na conexão. Mostrando a agenda salva no aparelho, quando disponível.", true);
     return;
   }
 
   if (reservationsResult.status === "rejected") {
-    updateBanner("Falha ao carregar reservas. Bloqueios foram carregados normalmente.", true);
+    updateBanner("Não conseguimos atualizar as reservas agora. Tente novamente em instantes.", true);
     return;
   }
 
-  updateBanner("Falha ao carregar bloqueios. Reservas foram carregadas normalmente.", true);
+  updateBanner("Não conseguimos atualizar os bloqueios agora. Tente novamente em instantes.", true);
 }
 
 async function fetchSheetRows(sheetName) {
@@ -331,7 +354,7 @@ function getSlotState(courtId, time) {
   if (!reservation) {
     return {
       status: "available",
-      description: "Clique para reservar",
+      description: "Toque para reservar",
     };
   }
 
@@ -351,7 +374,7 @@ function getSlotState(courtId, time) {
 
   return {
     status: "pending",
-    description: "Aguardando confirmação",
+    description: "Aguardando confirmação do pagamento",
   };
 }
 
@@ -431,6 +454,7 @@ function updatePaymentView() {
   const payment = getSelectedPayment();
   elements.pixPaymentBox.classList.toggle("hidden", payment !== "pix");
   elements.billingPaymentBox.classList.toggle("hidden", payment !== "faturamento");
+  updatePixWhatsappLink();
 }
 
 async function submitBooking() {
@@ -475,12 +499,12 @@ async function submitBooking() {
   }
 
   if (findReservationForSlot(booking.quadra, booking.horario)) {
-    updateBanner("Este horário já possui uma reserva. Atualize a agenda e escolha outro horário.", true);
+    updateBanner("Esse horário acabou de ser reservado. Escolha outro horário disponível.", true);
     return;
   }
 
   if (!startPendingOperation(operationKey)) {
-    updateBanner("Reserva já está sendo enviada. Aguarde a confirmação.", true);
+    updateBanner("Estamos finalizando seu pedido. Aguarde só um instante.", true);
     return;
   }
 
@@ -491,20 +515,19 @@ async function submitBooking() {
       reservations: [...reservations, booking],
       blocks,
     }));
+    saveLastBookingContact(booking);
 
     closeModal();
     await loadAgenda();
+    showBookingConfirmation(booking);
     updateBanner(
       booking.status === "faturado"
         ? `Reserva faturada para ${booking.quadra} às ${booking.horario}.`
-        : `Reserva enviada para ${booking.quadra} às ${booking.horario}. Status pendente até confirmação do PIX.`
+        : `Pedido enviado para ${booking.quadra} às ${booking.horario}. Agora é só enviar o comprovante PIX.`
     );
   } catch (error) {
     console.error(error);
-    updateBanner(
-      "Nao foi possivel confirmar o envio da reserva. Atualize a agenda antes de tentar novamente.",
-      true
-    );
+    updateFriendlyError(error, "Nao foi possivel confirmar o envio da reserva.");
   } finally {
     finishPendingOperation(operationKey);
     setButtonLoading(elements.bookingSubmitButton, false);
@@ -651,7 +674,7 @@ function renderAdminReservations() {
 async function confirmReservation(reservation, button) {
   const operationKey = `reservation:confirm:${reservation.data}:${reservation.quadra}:${reservation.horario}:${reservation.telefone}`;
   if (!startPendingOperation(operationKey)) {
-    updateBanner("Confirmação já está em andamento. Aguarde.", true);
+    updateBanner("Confirmação em andamento. Aguarde um instante.", true);
     return;
   }
 
@@ -674,7 +697,7 @@ async function confirmReservation(reservation, button) {
     updateBanner(`Reserva ${reservation.quadra} às ${reservation.horario} confirmada.`);
   } catch (error) {
     console.error(error);
-    updateBanner("Nao foi possivel confirmar o PIX. Atualize a agenda antes de tentar novamente.", true);
+    updateFriendlyError(error, "Nao foi possivel confirmar o PIX.");
   } finally {
     finishPendingOperation(operationKey);
     setButtonLoading(button, false);
@@ -710,7 +733,7 @@ async function submitRangeBlock(form) {
 
   const operationKey = `block:range:${state.selectedDate}:${court}:${startTime}:${endTime}`;
   if (!startPendingOperation(operationKey)) {
-    updateBanner("Bloqueio já está sendo registrado. Aguarde.", true);
+    updateBanner("Registrando bloqueio. Aguarde um instante.", true);
     return;
   }
 
@@ -731,10 +754,7 @@ async function submitRangeBlock(form) {
     updateBanner(`Bloqueio registrado para ${court} de ${startTime} até ${endTime}.`);
   } catch (error) {
     console.error(error);
-    updateBanner(
-      "Nao foi possivel confirmar o bloqueio. Atualize a agenda antes de tentar novamente.",
-      true
-    );
+    updateFriendlyError(error, "Nao foi possivel confirmar o bloqueio.");
   } finally {
     finishPendingOperation(operationKey);
     setButtonLoading(submitButton, false);
@@ -752,7 +772,7 @@ async function submitFullDayBlock(form) {
   };
   const operationKey = `block:full-day:${block.data}`;
   if (!startPendingOperation(operationKey)) {
-    updateBanner("Bloqueio de dia inteiro já está sendo registrado. Aguarde.", true);
+    updateBanner("Registrando bloqueio do dia. Aguarde um instante.", true);
     return;
   }
 
@@ -768,7 +788,7 @@ async function submitFullDayBlock(form) {
     updateBanner("Dia inteiro bloqueado com sucesso.");
   } catch (error) {
     console.error(error);
-    updateBanner("Nao foi possivel confirmar o bloqueio de dia inteiro.", true);
+    updateFriendlyError(error, "Nao foi possivel confirmar o bloqueio de dia inteiro.");
   } finally {
     finishPendingOperation(operationKey);
     setButtonLoading(submitButton, false);
@@ -1062,6 +1082,115 @@ function fillSettingsForm() {
   elements.settingsForm.elements.TN2.value = currencyToNumber(state.settings.pricingByCourt.TN2);
   elements.settingsForm.elements.openingStart.value = state.settings.openingStart;
   elements.settingsForm.elements.openingEnd.value = state.settings.openingEnd;
+}
+
+function findNextAvailableSlot() {
+  for (const time of getCurrentHours()) {
+    if (isPastTimeSlot(state.selectedDate, time)) {
+      continue;
+    }
+    for (const court of COURTS) {
+      const slotState = getSlotState(court.id, time);
+      if (slotState.status === "available") {
+        return { court, time };
+      }
+    }
+  }
+  return null;
+}
+
+function renderQuickSlotCTA() {
+  if (!elements.quickSlot || !elements.quickSlotTitle || !elements.quickSlotMeta || !elements.quickSlotBookButton) {
+    return;
+  }
+  const nextSlot = findNextAvailableSlot();
+  if (!nextSlot) {
+    elements.quickSlotTitle.textContent = "Sem horários livres para este dia";
+    elements.quickSlotMeta.textContent = "Troque a data para ver os próximos horários disponíveis.";
+    elements.quickSlotBookButton.disabled = true;
+    return;
+  }
+  elements.quickSlotTitle.textContent = `${nextSlot.court.name} às ${nextSlot.time}`;
+  elements.quickSlotMeta.textContent = `Data ${formatDate(state.selectedDate)} • reserve em 1 clique.`;
+  elements.quickSlotBookButton.disabled = false;
+}
+
+function saveLastBookingContact(booking) {
+  const snapshot = {
+    name: booking.nome || "",
+    phone: booking.telefone || "",
+  };
+  localStorage.setItem(LAST_BOOKING_CONTACT_KEY, JSON.stringify(snapshot));
+}
+
+function reuseLastBookingContact() {
+  if (!elements.bookingForm) {
+    return;
+  }
+  const raw = localStorage.getItem(LAST_BOOKING_CONTACT_KEY);
+  if (!raw) {
+    updateBanner("Ainda não encontramos uma reserva anterior para preencher seus dados.", true);
+    return;
+  }
+  try {
+    const last = JSON.parse(raw);
+    elements.bookingForm.elements.name.value = String(last.name || "");
+    elements.bookingForm.elements.phone.value = String(last.phone || "");
+    updateBanner("Pronto! Nome e telefone preenchidos com base na sua última reserva.");
+  } catch (error) {
+    console.error(error);
+    updateBanner("Não foi possível reaproveitar os dados agora. Preencha manualmente.", true);
+  }
+}
+
+function updatePixWhatsappLink() {
+  if (!elements.pixWhatsappLink || !state.selectedSlot) {
+    return;
+  }
+  const amount = state.settings.pricingByCourt[state.selectedSlot.courtId] ?? "Consulte";
+  const message = [
+    "Olá! Segue comprovante da reserva:",
+    `Quadra: ${state.selectedSlot.courtId}`,
+    `Data: ${formatDate(state.selectedDate)}`,
+    `Horário: ${state.selectedSlot.time}`,
+    `Valor: ${amount}`,
+  ].join("\n");
+  elements.pixWhatsappLink.href = `https://wa.me/?text=${encodeURIComponent(message)}`;
+}
+
+function showBookingConfirmation(booking) {
+  if (!elements.bookingConfirmation) {
+    return;
+  }
+  const statusText = booking.status === "faturado" ? "Reserva confirmada em faturamento" : "Aguardando confirmação do PIX";
+  const nextStep = booking.status === "faturado"
+    ? "Próximo passo: compareça no horário reservado e aproveite sua quadra."
+    : "Próximo passo: envie o comprovante no WhatsApp para confirmar mais rápido.";
+  elements.bookingConfirmationTitle.textContent = `${booking.quadra} • ${booking.horario} • ${formatDate(booking.data)}`;
+  elements.bookingConfirmationMeta.textContent = `Status: ${statusText}`;
+  elements.bookingConfirmationNextStep.textContent = nextStep;
+  elements.bookingConfirmation.classList.remove("hidden");
+}
+
+function hideBookingConfirmation() {
+  elements.bookingConfirmation?.classList.add("hidden");
+}
+
+function updateFriendlyError(error, fallbackMessage) {
+  const raw = String(error?.message || fallbackMessage || "");
+  if (raw.toLowerCase().includes("network") || raw.toLowerCase().includes("fetch")) {
+    updateBanner("Sua conexão oscilou. Tente novamente em alguns segundos.", true);
+    return;
+  }
+  if (raw.toLowerCase().includes("webhook")) {
+    updateBanner("Nosso sistema está instável no momento. Tente novamente em instantes.", true);
+    return;
+  }
+  if (raw.toLowerCase().includes("horario") || raw.toLowerCase().includes("reserva")) {
+    updateBanner("Esse horário acabou de mudar. Atualize a agenda e escolha outro disponível.", true);
+    return;
+  }
+  updateBanner(`${fallbackMessage} Tente novamente em instantes.`, true);
 }
 
 async function saveSettings(form) {

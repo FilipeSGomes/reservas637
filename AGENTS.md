@@ -29,20 +29,6 @@ Sem backend próprio — toda persistência via Google Sheets + Apps Script.
 ├── manifest.json       # PWA manifest
 └── images/             # Assets visuais
 ```
-
----
-
-## Variáveis de configuração (app.js)
-
-```javascript
-const spreadsheetId = '1yAY3OEWCv0Be3c7YxhTl70rTNBWqJAUXknpU5-UkNXc';
-const googleSheetsApiKey = ''; // não necessário — planilha pública
-const appsScriptWebhookUrl = 'https://script.google.com/macros/s/AKfycbwY20dNukwG6anIDRf8j41vPk95KLrC7TTshMjrfJ1z3k1F3aWnaslX7AfTOjzvSTga/exec';
-const sheetsUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:json`;
-```
-
-Nunca altere esses valores. Nunca mova para outro arquivo.
-
 ---
 
 ## Quadras disponíveis

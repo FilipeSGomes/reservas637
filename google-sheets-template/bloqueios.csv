@@ -1,2 +1,2 @@
-data,quadra,horario,motivo
-2026-04-24,TN1,09:00,Manutencao
+data,quadra,horario,motivo,tipo
+2026-04-24,TN1,09:00,Manutencao,Manutenção

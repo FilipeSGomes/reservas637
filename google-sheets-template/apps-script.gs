@@ -142,6 +142,7 @@ function appendBlock_(spreadsheet, payload) {
     payload.quadra || "",
     payload.horario || "",
     payload.motivo || "",
+    payload.tipo || "Manutenção",
   ]);
 
   return { ok: true, created: true };

@@ -72,6 +72,26 @@
         </section>
 
         <section class="status-banner" id="status-banner"></section>
+        <section class="quick-slot" id="quick-slot" aria-live="polite">
+          <div>
+            <p class="eyebrow">Próximo Horário Livre</p>
+            <h3 id="quick-slot-title">Buscando o melhor horário para você...</h3>
+            <p id="quick-slot-meta" class="fine-print"></p>
+          </div>
+          <button id="quick-slot-book-button" class="primary-button" type="button">
+            Reservar agora
+          </button>
+        </section>
+
+        <section id="booking-confirmation" class="booking-confirmation hidden" aria-live="polite">
+          <div>
+            <p class="eyebrow">Reserva Enviada</p>
+            <h3 id="booking-confirmation-title">Tudo certo com seu pedido</h3>
+            <p id="booking-confirmation-meta" class="fine-print"></p>
+            <p id="booking-confirmation-next-step" class="fine-print"></p>
+          </div>
+          <button id="booking-confirmation-close" class="ghost-button" type="button">Fechar</button>
+        </section>
 
         <section class="schedule-section">
           <div class="section-heading">
@@ -159,6 +179,9 @@
               required
             />
           </label>
+          <button class="secondary-button" id="booking-reuse-button" type="button">
+            Reservar novamente
+          </button>
         </div>
 
         <div id="booking-payment-step" class="booking-step hidden">
@@ -185,6 +208,9 @@
             <strong id="pix-key">pix@quadras.com</strong>
             <span id="pix-amount">R$ 80,00</span>
             <p class="payment-instruction">Envie o comprovante pelo WhatsApp.</p>
+            <a id="pix-whatsapp-link" class="ghost-button" target="_blank" rel="noopener noreferrer" href="#">
+              Enviar comprovante pelo WhatsApp
+            </a>
           </div>
 
           <div id="billing-payment-box" class="billing-box hidden">
