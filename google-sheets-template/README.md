@@ -30,7 +30,7 @@ Preencha em [`app.js`](../app.js):
 
 As colunas precisam permanecer nesta ordem:
 
-- `reservas`: `data`, `quadra`, `horario`, `nome`, `telefone`, `cpf`, `status`, `pagamento`, `observacao`
+- `reservas`: `data`, `quadra`, `horario`, `nome`, `telefone`, `cpf`, `status`, `pagamento`, `observacao`, `price`, `period`, `pricingSnapshot`
 - `bloqueios`: `data`, `quadra`, `horario`, `motivo`, `tipo`
 - `config`: `chave`, `valor`
 
@@ -40,9 +40,20 @@ Chaves esperadas em `config`:
 - `whatsappPhoneNumber` em dígitos, por exemplo `5511944554650`
 - `openingStart`
 - `openingEnd`
+- `pricing.dayPrice`
+- `pricing.nightPrice`
+- `pricing.nightStartsAt`
+- `pricing.updatedAt`
 - `BT1`
 - `BT2`
 - `TN1`
 - `TN2`
 - `copy.*` para textos opcionais do front, se quiser centralizar as mensagens no Sheets
 - Exemplos de `copy.*`: `quickSlotEyebrow`, `heroHoursLabel`, `scheduleTitle`, `bookingPixLabel`, `pixWhatsAppMessage`
+
+Regra de preço:
+
+- o sistema calcula `dayPrice` para horários anteriores a `pricing.nightStartsAt`
+- o sistema calcula `nightPrice` para horários maiores ou iguais ao início do período noturno
+- reservas novas salvam `price`, `period` e `pricingSnapshot`
+- reservas antigas sem `price` seguem como legado, sem reescrita automática

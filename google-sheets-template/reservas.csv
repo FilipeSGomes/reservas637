@@ -1,2 +1,2 @@
-data,quadra,horario,nome,telefone,cpf,status,pagamento,observacao
-2026-04-24,BT1,07:00,Cliente Exemplo,(11) 99999-9999,000.000.000-00,pendente,pix,
+data,quadra,horario,nome,telefone,cpf,status,pagamento,observacao,price,period,pricingSnapshot
+2026-04-24,BT1,07:00,Cliente Exemplo,(11) 99999-9999,000.000.000-00,pendente,pix,,80,diurno,"{""dayPrice"":80,""nightPrice"":100,""nightStartsAt"":""18:00"",""updatedAt"":""2026-05-04T00:00:00.000Z""}"

@@ -20,6 +20,7 @@ const SETTINGS_STORAGE_KEY = "quadras-admin-settings";
 const FULL_DAY_BLOCK_SENTINEL = "__FULL_DAY__";
 const ADMIN_AUTH_STORAGE_KEY = "quadras-admin-auth";
 const LAST_BOOKING_CONTACT_KEY = "quadras-last-booking-contact";
+const SETTINGS_BROADCAST_CHANNEL = "quadras-settings";
 
 const DEFAULT_COPY = {
   quickSlotEyebrow: "Próximo horário livre",
@@ -58,6 +59,7 @@ const DEFAULT_COPY = {
 const DEFAULT_SETTINGS = {
   pixKey: "pix@quadras.com",
   whatsappPhoneNumber: "5511944554650",
+  pricingConfig: getDefaultPricingConfig(),
   pricingByCourt: {
     BT1: "R$ 80,00",
     BT2: "R$ 80,00",
@@ -72,6 +74,7 @@ const DEFAULT_SETTINGS = {
 let loadingOverlayCounter = 0;
 let loadingOverlayTimeoutId = null;
 let lastModalTrigger = null;
+let settingsBroadcastChannel = null;
 
 const state = {
   selectedDate: getToday(),
@@ -79,7 +82,7 @@ const state = {
   reservations: [],
   blocks: [],
   adminEnabled: false,
-  settings: readSettings(),
+  settings: { ...DEFAULT_SETTINGS },
   pendingOperations: new Set(),
 };
 
@@ -95,6 +98,12 @@ const elements = {
   heroHoursRange: document.querySelector("#hero-hours-range"),
   heroHoursLabel: document.querySelector("#hero-hours-label"),
   heroHoursDescription: document.querySelector("#hero-hours-description"),
+  pricingForm: document.querySelector("#pricing-form"),
+  pricingStatus: document.querySelector("#pricing-status"),
+  pricingSaveButton: document.querySelector("#pricing-save-button"),
+  pricingDayPrice: document.querySelector('input[name="dayPrice"]'),
+  pricingNightPrice: document.querySelector('input[name="nightPrice"]'),
+  pricingNightStartsAt: document.querySelector('input[name="nightStartsAt"]'),
   scheduleEyebrow: document.querySelector("#schedule-eyebrow"),
   scheduleTitle: document.querySelector("#schedule-title"),
   bookingConfirmation: document.querySelector("#booking-confirmation"),
@@ -112,6 +121,7 @@ const elements = {
   preBookingAmountLabel: document.querySelector("#pre-booking-amount-label"),
   preBookingRules: document.querySelector("#pre-booking-rules"),
   preBookingAmount: document.querySelector("#pre-booking-amount"),
+  preBookingPeriod: document.querySelector("#pre-booking-period"),
   closePreBookingButton: document.querySelector("#close-pre-booking-button"),
   cancelPreBookingButton: document.querySelector("#cancel-pre-booking-button"),
   continueBookingButton: document.querySelector("#continue-booking-button"),
@@ -124,6 +134,9 @@ const elements = {
   bookingNextButton: document.querySelector("#booking-next-button"),
   bookingSubmitButton: document.querySelector("#booking-submit-button"),
   bookingReuseButton: document.querySelector("#booking-reuse-button"),
+  bookingSummaryTime: document.querySelector("#booking-summary-time"),
+  bookingSummaryPeriod: document.querySelector("#booking-summary-period"),
+  bookingSummaryPrice: document.querySelector("#booking-summary-price"),
   pixPaymentBox: document.querySelector("#pix-payment-box"),
   pixWhatsappLink: document.querySelector("#pix-whatsapp-link"),
   bookingPixTitle: document.querySelector("#booking-pix-title"),
@@ -136,6 +149,7 @@ const elements = {
   billingPaymentBox: document.querySelector("#billing-payment-box"),
   pixKey: document.querySelector("#pix-key"),
   pixAmount: document.querySelector("#pix-amount"),
+  pixPeriod: document.querySelector("#pix-period"),
   closeModalButton: document.querySelector("#close-modal-button"),
   cancelBookingButton: document.querySelector("#cancel-booking-button"),
   adminAccessButton: document.querySelector("#admin-access-button"),
@@ -178,6 +192,7 @@ async function boot() {
   applySettings();
   populateSelects();
   attachEvents();
+  setupSettingsSync();
   updateAdminRouteUI();
   updateBanner("Carregando agenda...");
   loadAgenda();
@@ -255,6 +270,17 @@ function attachEvents() {
   elements.dayBlockForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
     await submitFullDayBlock(event.currentTarget);
+  });
+  elements.pricingForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await savePricingConfig(event.currentTarget);
+  });
+  elements.pricingForm?.querySelectorAll('input[name="dayPrice"], input[name="nightPrice"], input[name="nightStartsAt"]')?.forEach((input) => {
+    input.addEventListener("input", () => {
+      clearPricingStatus();
+      updatePricingFormState();
+    });
+    input.addEventListener("change", updatePricingFormState);
   });
   elements.settingsForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -336,6 +362,7 @@ async function loadSettingsFromSheet() {
     storeSettingsCache(state.settings);
   } catch (error) {
     console.error(error);
+    state.settings = readSettings();
   }
 }
 
@@ -380,6 +407,9 @@ async function fetchSheetRows(sheetName) {
       status: normalizeReservationStatus(getCellValue(row.c?.[6])),
       pagamento: normalizePayment(getCellValue(row.c?.[7])),
       observacao: getCellValue(row.c?.[8]),
+      price: parseReservationPrice(getCellValue(row.c?.[9])),
+      period: normalizeReservationPeriod(getCellValue(row.c?.[10])),
+      pricingSnapshot: parseReservationPricingSnapshot(getCellValue(row.c?.[11])),
     })).filter((row) => row.data && row.quadra && row.horario);
   }
 
@@ -395,6 +425,7 @@ async function fetchSheetRows(sheetName) {
 function configRowsToSettings(rows) {
   const next = {
     ...DEFAULT_SETTINGS,
+    pricingConfig: { ...DEFAULT_SETTINGS.pricingConfig },
     pricingByCourt: { ...DEFAULT_SETTINGS.pricingByCourt },
     copy: { ...DEFAULT_SETTINGS.copy },
   };
@@ -413,6 +444,26 @@ function configRowsToSettings(rows) {
 
     if (key === "whatsappPhoneNumber") {
       next.whatsappPhoneNumber = normalizeWhatsAppPhoneStorage(value) || next.whatsappPhoneNumber;
+      return;
+    }
+
+    if (key === "pricing.dayPrice" || key === "dayPrice") {
+      next.pricingConfig.dayPrice = parseCurrencyInput(value, next.pricingConfig.dayPrice);
+      return;
+    }
+
+    if (key === "pricing.nightPrice" || key === "nightPrice") {
+      next.pricingConfig.nightPrice = parseCurrencyInput(value, next.pricingConfig.nightPrice);
+      return;
+    }
+
+    if (key === "pricing.nightStartsAt" || key === "nightStartsAt") {
+      next.pricingConfig.nightStartsAt = value || next.pricingConfig.nightStartsAt;
+      return;
+    }
+
+    if (key === "pricing.updatedAt" || key === "updatedAt") {
+      next.pricingConfig.updatedAt = value || next.pricingConfig.updatedAt;
       return;
     }
 
@@ -436,6 +487,7 @@ function mergeSettings(base, incoming) {
   return {
     ...base,
     ...incoming,
+    pricingConfig: normalizePricingConfig(incoming.pricingConfig || base.pricingConfig),
     pricingByCourt: { ...base.pricingByCourt, ...(incoming.pricingByCourt || {}) },
     copy: { ...base.copy, ...(incoming.copy || {}) },
   };
@@ -443,6 +495,56 @@ function mergeSettings(base, incoming) {
 
 function storeSettingsCache(settings) {
   localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+}
+
+function setupSettingsSync() {
+  if (setupSettingsSync.initialized) {
+    return;
+  }
+
+  setupSettingsSync.initialized = true;
+
+  window.addEventListener("storage", handleSettingsStorageEvent);
+
+  if ("BroadcastChannel" in window) {
+    settingsBroadcastChannel = new BroadcastChannel(SETTINGS_BROADCAST_CHANNEL);
+    settingsBroadcastChannel.addEventListener("message", handleSettingsBroadcastMessage);
+  }
+}
+
+function handleSettingsStorageEvent(event) {
+  if (event.key !== SETTINGS_STORAGE_KEY || !event.newValue) {
+    return;
+  }
+
+  applyIncomingSettings(event.newValue);
+}
+
+function handleSettingsBroadcastMessage(event) {
+  const payload = event.data || {};
+  if (payload.type !== "settings:update" || !payload.settings) {
+    return;
+  }
+
+  applyIncomingSettings(JSON.stringify(payload.settings));
+}
+
+function applyIncomingSettings(rawSettings) {
+  try {
+    const parsed = typeof rawSettings === "string" ? JSON.parse(rawSettings) : rawSettings;
+    const nextSettings = mergeSettings(DEFAULT_SETTINGS, parsed || {});
+    if (JSON.stringify(state.settings) === JSON.stringify(nextSettings)) {
+      return;
+    }
+
+    state.settings = nextSettings;
+    applySettings();
+    populateSelects();
+    renderSchedule();
+    renderQuickSlotCTA();
+  } catch (error) {
+    console.error(error);
+  }
 }
 
 function renderSchedule() {
@@ -495,7 +597,7 @@ function renderSchedule() {
           <span class="slot-card-title">${time}</span>
           <span class="slot-card-status">${labelForStatus(slotState.status)}</span>
         </span>
-        <span class="slot-card-meta">${slotState.description}</span>
+        <span class="slot-card-meta">${slotState.meta}</span>
       `;
 
       if (slotState.status === "available") {
@@ -515,43 +617,46 @@ function getSlotState(courtId, time) {
   if (block) {
     return {
       status: blockStatusForType(block.tipo),
-      description: `${block.tipo || "Bloqueado"}${block.motivo ? ` • ${block.motivo}` : ""}`,
+      meta: `${block.tipo || "Bloqueado"}${block.motivo ? ` • ${block.motivo}` : ""}`,
     };
   }
 
   if (isPastTimeSlot(state.selectedDate, time)) {
     return {
       status: "unavailable",
-      description: "Horário já passou",
+      meta: "Horário já passou",
     };
   }
 
   const reservation = findReservationForSlot(courtId, time);
+  const pricing = resolveSlotPricing(time, state.settings.pricingConfig);
+  const reservationPriceText = reservation?.price ? formatCurrencyBRL(reservation.price) : "";
 
   if (!reservation) {
     return {
       status: "available",
-      description: "Toque para reservar",
+      meta: pricing.priceText,
+      pricing,
     };
   }
 
   if (reservation.status === "confirmado") {
     return {
       status: "confirmed",
-      description: "Horário indisponível",
+      meta: reservationPriceText ? `Confirmado • ${reservationPriceText}` : "Confirmado",
     };
   }
 
   if (reservation.status === "faturado") {
     return {
       status: "billed",
-      description: "Horário indisponível",
+      meta: reservationPriceText ? `Faturado • ${reservationPriceText}` : "Faturado",
     };
   }
 
   return {
     status: "pending",
-    description: "Aguardando confirmação do pagamento",
+    meta: reservationPriceText ? `Pendente • ${reservationPriceText}` : "Aguardando confirmação do pagamento",
   };
 }
 
@@ -577,10 +682,15 @@ function openPreBookingModal(court, time) {
     return;
   }
 
-  state.selectedSlot = { courtId: court.id, courtName: court.name, time };
+  state.selectedSlot = {
+    courtId: court.id,
+    courtName: court.name,
+    time,
+    pricing: resolveSlotPricing(time, state.settings.pricingConfig),
+  };
   renderSchedule();
   elements.preBookingTitle.textContent = `${court.name} • ${formatDate(state.selectedDate)} • ${time}`;
-  elements.preBookingAmount.textContent = state.settings.pricingByCourt[court.id] ?? "Consulte";
+  syncBookingUiFromSettings();
   lastModalTrigger = document.activeElement;
   document.body.classList.add("modal-open");
   elements.preBookingModal?.showModal();
@@ -604,7 +714,7 @@ function continueToBookingForm() {
   elements.bookingForm?.reset();
   showRegistrationStep();
   elements.pixKey.textContent = state.settings.pixKey;
-  elements.pixAmount.textContent = state.settings.pricingByCourt[state.selectedSlot.courtId] ?? "Consulte";
+  syncBookingUiFromSettings();
   updatePaymentView();
   lastModalTrigger = document.activeElement;
   document.body.classList.add("modal-open");
@@ -640,6 +750,10 @@ function updatePaymentView() {
   const payment = getSelectedPayment();
   elements.pixPaymentBox.classList.toggle("hidden", payment !== "pix");
   elements.billingPaymentBox.classList.toggle("hidden", payment !== "faturamento");
+  if (elements.bookingBillingNotice) {
+    const pricing = getSelectedSlotPricing();
+    elements.bookingBillingNotice.textContent = `Valor de ${pricing.priceText} será lançado na sua conta. Pagamento no final do mês.`;
+  }
   updatePixWhatsappLink();
 }
 
@@ -666,6 +780,7 @@ async function submitBooking() {
 
   const formData = new FormData(elements.bookingForm);
   const pagamento = String(formData.get("payment") || "pix");
+  const pricing = getSelectedSlotPricing();
   const booking = {
     data: state.selectedDate,
     quadra: state.selectedSlot.courtId,
@@ -676,6 +791,9 @@ async function submitBooking() {
     status: pagamento === "faturamento" ? "faturado" : "pendente",
     pagamento,
     observacao: String(formData.get("observation") || "").trim(),
+    price: pricing.price,
+    period: pricing.period,
+    pricingSnapshot: pricing.pricingSnapshot,
   };
   const operationKey = `reservation:create:${booking.data}:${booking.quadra}:${booking.horario}`;
 
@@ -708,8 +826,8 @@ async function submitBooking() {
     showBookingConfirmation(booking);
     updateBanner(
       booking.status === "faturado"
-        ? `Reserva faturada para ${booking.quadra} às ${booking.horario}.`
-        : `Pedido enviado para ${booking.quadra} às ${booking.horario}. Agora é só enviar o comprovante PIX.`
+        ? `Reserva faturada para ${booking.quadra} às ${booking.horario} por ${pricing.priceText}.`
+        : `Pedido enviado para ${booking.quadra} às ${booking.horario} por ${pricing.priceText}. Agora é só enviar o comprovante PIX.`
     );
   } catch (error) {
     console.error(error);
@@ -816,6 +934,8 @@ function renderAdminReservations() {
   dayItems.forEach((reservation) => {
     const item = document.createElement("article");
     item.className = "admin-item";
+    const savedPrice = reservation.price ? formatCurrencyBRL(reservation.price) : "Valor não salvo";
+    const savedPeriod = reservation.period ? ` • ${formatPeriodLabel(reservation.period)}` : "";
     item.innerHTML = `
       <div class="admin-item-top">
         <strong>${reservation.quadra} • ${reservation.horario}</strong>
@@ -832,7 +952,7 @@ function renderAdminReservations() {
         ${reservation.cpf ? ` • CPF ${reservation.cpf}` : ""}
       </p>
       <p class="admin-item-meta">
-        Pagamento: ${reservation.pagamento || "pix"}
+        Pagamento: ${reservation.pagamento || "pix"} • ${savedPrice}${savedPeriod}
         ${reservation.observacao ? ` • ${reservation.observacao}` : ""}
       </p>
     `;
@@ -1260,6 +1380,7 @@ function readSettings() {
       whatsappPhoneNumber: normalizeWhatsAppPhoneStorage(
         parsed.whatsappPhoneNumber || DEFAULT_SETTINGS.whatsappPhoneNumber
       ) || DEFAULT_SETTINGS.whatsappPhoneNumber,
+      pricingConfig: normalizePricingConfig(parsed.pricingConfig || DEFAULT_SETTINGS.pricingConfig),
       pricingByCourt: { ...DEFAULT_SETTINGS.pricingByCourt, ...(parsed.pricingByCourt || {}) },
       openingStart: parsed.openingStart || DEFAULT_SETTINGS.openingStart,
       openingEnd: parsed.openingEnd || DEFAULT_SETTINGS.openingEnd,
@@ -1356,7 +1477,42 @@ function applySettings() {
     elements.heroHoursRange.textContent = openingHours;
   }
   fillSettingsForm();
+  fillPricingForm();
   fillConfigForm();
+  syncBookingUiFromSettings();
+}
+
+function syncBookingUiFromSettings() {
+  if (!state.selectedSlot) {
+    return;
+  }
+
+  const pricing = getSelectedSlotPricing();
+  if (elements.preBookingAmount) {
+    elements.preBookingAmount.textContent = pricing.priceText;
+  }
+  if (elements.preBookingPeriod) {
+    elements.preBookingPeriod.textContent = `Período ${formatPeriodLabel(pricing.period)}`;
+  }
+  if (elements.bookingSummaryTime) {
+    elements.bookingSummaryTime.textContent = state.selectedSlot.time;
+  }
+  if (elements.bookingSummaryPeriod) {
+    elements.bookingSummaryPeriod.textContent = formatPeriodLabel(pricing.period);
+  }
+  if (elements.bookingSummaryPrice) {
+    elements.bookingSummaryPrice.textContent = pricing.priceText;
+  }
+  if (elements.pixKey) {
+    elements.pixKey.textContent = state.settings.pixKey;
+  }
+  if (elements.pixAmount) {
+    elements.pixAmount.textContent = pricing.priceText;
+  }
+  if (elements.pixPeriod) {
+    elements.pixPeriod.textContent = `Período ${formatPeriodLabel(pricing.period)}`;
+  }
+  updatePaymentView();
 }
 
 function fillSettingsForm() {
@@ -1371,6 +1527,24 @@ function fillSettingsForm() {
   elements.settingsForm.elements.TN2.value = currencyToNumber(state.settings.pricingByCourt.TN2);
   elements.settingsForm.elements.openingStart.value = state.settings.openingStart;
   elements.settingsForm.elements.openingEnd.value = state.settings.openingEnd;
+}
+
+function fillPricingForm() {
+  if (!elements.pricingForm) {
+    return;
+  }
+
+  const pricing = loadPricingConfig();
+  if (elements.pricingForm.elements.dayPrice) {
+    elements.pricingForm.elements.dayPrice.value = formatPriceInput(pricing.dayPrice);
+  }
+  if (elements.pricingForm.elements.nightPrice) {
+    elements.pricingForm.elements.nightPrice.value = formatPriceInput(pricing.nightPrice);
+  }
+  if (elements.pricingForm.elements.nightStartsAt) {
+    elements.pricingForm.elements.nightStartsAt.value = pricing.nightStartsAt;
+  }
+  updatePricingFormState();
 }
 
 function fillConfigForm() {
@@ -1410,6 +1584,224 @@ function fillConfigForm() {
       elements.configForm.elements[field].value = copy[field] || "";
     }
   });
+}
+
+function getDefaultPricingConfig() {
+  return {
+    dayPrice: 80,
+    nightPrice: 80,
+    nightStartsAt: "18:00",
+    updatedAt: "",
+  };
+}
+
+function loadPricingConfig() {
+  return normalizePricingConfig(state.settings.pricingConfig || DEFAULT_SETTINGS.pricingConfig);
+}
+
+async function savePricingConfig(form) {
+  if (!form) {
+    return;
+  }
+
+  const formData = new FormData(form);
+  const candidate = {
+    dayPrice: parseCurrencyInput(formData.get("dayPrice"), 0),
+    nightPrice: parseCurrencyInput(formData.get("nightPrice"), 0),
+    nightStartsAt: String(formData.get("nightStartsAt") || "").trim(),
+  };
+  const validation = validatePricingConfig(candidate);
+  if (!validation.valid) {
+    updatePricingStatus(validation.message || "Preencha os valores corretamente antes de salvar.");
+    return;
+  }
+
+  const normalized = normalizePricingConfig(candidate);
+  state.settings = {
+    ...state.settings,
+    pricingConfig: {
+      ...normalized,
+      updatedAt: new Date().toISOString(),
+    },
+  };
+
+  setFormDisabled(form, true);
+  setButtonLoading(elements.pricingSaveButton, true, "Salvando...");
+
+  try {
+    await submitMutation("config:update", { settings: state.settings }, () => null);
+    storeSettingsCache(state.settings);
+    broadcastSettingsChange(state.settings);
+    await loadSettingsFromSheet();
+    applySettings();
+    updatePricingStatus("Configuração de valores salva.");
+    updateBanner("Configuração de valores salva.");
+  } catch (error) {
+    console.error(error);
+    updatePricingStatus("Nao foi possivel salvar a configuração de valores.");
+    updateFriendlyError(error, "Nao foi possivel salvar a configuração de valores.");
+  } finally {
+    setFormDisabled(form, false);
+    setButtonLoading(elements.pricingSaveButton, false);
+    updatePricingFormState();
+  }
+}
+
+function validatePricingConfig(config) {
+  if (!config) {
+    return { valid: false, message: "Preencha os valores corretamente antes de salvar." };
+  }
+
+  if (!(config.dayPrice > 0)) {
+    return { valid: false, message: "Valor diurno deve ser maior que zero." };
+  }
+
+  if (!(config.nightPrice > 0)) {
+    return { valid: false, message: "Valor noturno deve ser maior que zero." };
+  }
+
+  if (!isValidTimeValue(config.nightStartsAt)) {
+    return { valid: false, message: "Informe um horário válido para o início do período noturno." };
+  }
+
+  return { valid: true };
+}
+
+function normalizePricingConfig(config) {
+  const fallback = getDefaultPricingConfig();
+  const incoming = config || {};
+  const dayPrice = parseCurrencyInput(incoming.dayPrice, fallback.dayPrice);
+  const nightPrice = parseCurrencyInput(incoming.nightPrice, fallback.nightPrice);
+  const nightStartsAt = isValidTimeValue(incoming.nightStartsAt) ? incoming.nightStartsAt : fallback.nightStartsAt;
+  return {
+    dayPrice: dayPrice > 0 ? dayPrice : fallback.dayPrice,
+    nightPrice: nightPrice > 0 ? nightPrice : fallback.nightPrice,
+    nightStartsAt,
+    updatedAt: String(incoming.updatedAt || fallback.updatedAt || ""),
+  };
+}
+
+function resolveSlotPricing(time, pricingConfig) {
+  const config = normalizePricingConfig(pricingConfig || loadPricingConfig());
+  const pricing = getPriceForTime(time, config);
+  return {
+    ...pricing,
+    priceText: formatCurrencyBRL(pricing.price),
+    periodLabel: formatPeriodLabel(pricing.period),
+    pricingSnapshot: { ...config },
+  };
+}
+
+function getSelectedSlotPricing() {
+  if (!state.selectedSlot) {
+    return resolveSlotPricing("07:00", loadPricingConfig());
+  }
+
+  if (state.selectedSlot.pricing) {
+    return state.selectedSlot.pricing;
+  }
+
+  return resolveSlotPricing(state.selectedSlot.time, loadPricingConfig());
+}
+
+function getPriceForTime(time, pricingConfig) {
+  const config = normalizePricingConfig(pricingConfig || loadPricingConfig());
+  const minutes = timeToMinutes(time);
+  if (minutes === null) {
+    console.warn("Horário inválido ao calcular preço:", time);
+    return { price: config.dayPrice, period: "diurno" };
+  }
+
+  const nightStartMinutes = timeToMinutes(config.nightStartsAt);
+  if (nightStartMinutes === null) {
+    console.warn("Horário inválido na configuração de preço:", config.nightStartsAt);
+    return { price: config.dayPrice, period: "diurno" };
+  }
+
+  if (minutes >= nightStartMinutes) {
+    return { price: config.nightPrice, period: "noturno" };
+  }
+
+  return { price: config.dayPrice, period: "diurno" };
+}
+
+function timeToMinutes(time) {
+  const value = String(time || "").trim();
+  const match = value.match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) {
+    return null;
+  }
+
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (!Number.isInteger(hours) || !Number.isInteger(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+    return null;
+  }
+
+  return hours * 60 + minutes;
+}
+
+function isValidTimeValue(value) {
+  return timeToMinutes(value) !== null;
+}
+
+function parseCurrencyInput(value, fallback = 0) {
+  const normalized = String(value || "")
+    .replace(/[^\d,.-]/g, "")
+    .replace(/\.(?=\d{3}(\D|$))/g, "")
+    .replace(",", ".");
+  const parsed = Number(normalized);
+  if (!Number.isFinite(parsed)) {
+    return fallback;
+  }
+  return parsed;
+}
+
+function formatPriceInput(value) {
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) {
+    return "";
+  }
+  return amount.toFixed(2).replace(".", ",");
+}
+
+function formatCurrencyBRL(value) {
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) {
+    return "R$ 0,00";
+  }
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(amount);
+}
+
+function formatPeriodLabel(period) {
+  return period === "noturno" ? "Noturno" : "Diurno";
+}
+
+function updatePricingStatus(message) {
+  if (elements.pricingStatus) {
+    elements.pricingStatus.textContent = message;
+  }
+}
+
+function clearPricingStatus() {
+  updatePricingStatus("");
+}
+
+function updatePricingFormState() {
+  if (!elements.pricingForm || !elements.pricingSaveButton) {
+    return;
+  }
+
+  const candidate = {
+    dayPrice: parseCurrencyInput(elements.pricingForm.elements.dayPrice?.value, 0),
+    nightPrice: parseCurrencyInput(elements.pricingForm.elements.nightPrice?.value, 0),
+    nightStartsAt: String(elements.pricingForm.elements.nightStartsAt?.value || ""),
+  };
+  const validation = validatePricingConfig(candidate);
+  elements.pricingSaveButton.disabled = !validation.valid;
 }
 
 function findNextAvailableSlot() {
@@ -1458,6 +1850,7 @@ function saveLastBookingContact(booking) {
   const snapshot = {
     name: booking.nome || "",
     phone: booking.telefone || "",
+    cpf: String(booking.cpf || "").replace(/\D/g, ""),
   };
   localStorage.setItem(LAST_BOOKING_CONTACT_KEY, JSON.stringify(snapshot));
 }
@@ -1475,7 +1868,8 @@ function reuseLastBookingContact() {
     const last = JSON.parse(raw);
     elements.bookingForm.elements.name.value = String(last.name || "");
     elements.bookingForm.elements.phone.value = String(last.phone || "");
-    updateBanner("Pronto! Nome e telefone preenchidos com base na sua última reserva.");
+    elements.bookingForm.elements.cpf.value = formatCpfDisplay(last.cpf || "");
+    updateBanner("Pronto! Nome, telefone e CPF preenchidos com base na sua última reserva.");
   } catch (error) {
     console.error(error);
     updateBanner("Não foi possível reaproveitar os dados agora. Preencha manualmente.", true);
@@ -1486,14 +1880,14 @@ function updatePixWhatsappLink() {
   if (!elements.pixWhatsappLink || !state.selectedSlot) {
     return;
   }
-  const amount = state.settings.pricingByCourt[state.selectedSlot.courtId] ?? "Consulte";
+  const pricing = getSelectedSlotPricing();
   const template = (state.settings.copy || DEFAULT_SETTINGS.copy).pixWhatsAppMessage || DEFAULT_SETTINGS.copy.pixWhatsAppMessage;
   const normalizedTemplate = String(template).replace(/\\n/g, "\n");
   const message = normalizedTemplate
     .replace(/\{court\}/g, state.selectedSlot.courtId)
     .replace(/\{date\}/g, formatDate(state.selectedDate))
     .replace(/\{time\}/g, state.selectedSlot.time)
-    .replace(/\{amount\}/g, amount);
+    .replace(/\{amount\}/g, pricing.priceText);
   const phoneNumber = normalizeWhatsAppPhone(state.settings.whatsappPhoneNumber || DEFAULT_SETTINGS.whatsappPhoneNumber);
   const whatsappUrl = phoneNumber ? `https://wa.me/${phoneNumber}` : "https://wa.me/";
   elements.pixWhatsappLink.href = `${whatsappUrl}?text=${encodeURIComponent(message)}`;
@@ -1504,7 +1898,9 @@ function showBookingConfirmation(booking) {
     return;
   }
   const copy = state.settings.copy || DEFAULT_SETTINGS.copy;
-  const statusText = booking.status === "faturado" ? "Solicitação em faturamento" : "Solicitação enviada (pendente de confirmação)";
+  const statusText = booking.status === "faturado"
+    ? "Solicitação em faturamento"
+    : "Solicitação enviada (pendente de confirmação)";
   const nextStep = booking.status === "faturado"
     ? "Próximo passo: compareça no horário reservado e aproveite sua quadra."
     : "Próximo passo: envie o comprovante no WhatsApp para confirmar mais rápido.";
@@ -1512,7 +1908,7 @@ function showBookingConfirmation(booking) {
     elements.bookingConfirmationEyebrow.textContent = copy.confirmationEyebrow;
   }
   elements.bookingConfirmationTitle.textContent = `${copy.confirmationTitle} • ${booking.quadra} • ${booking.horario} • ${formatDate(booking.data)}`;
-  elements.bookingConfirmationMeta.textContent = `Status: ${statusText}`;
+  elements.bookingConfirmationMeta.textContent = `Status: ${statusText} • Valor: ${formatCurrencyBRL(booking.price)}`;
   elements.bookingConfirmationNextStep.textContent = nextStep;
   elements.bookingConfirmation.classList.remove("hidden");
 }
@@ -1550,6 +1946,7 @@ async function saveSettings(form) {
     pixKey: String(formData.get("pixKey") || "").trim(),
     whatsappPhoneNumber:
       normalizeWhatsAppPhoneStorage(formData.get("whatsappPhoneNumber")) || DEFAULT_SETTINGS.whatsappPhoneNumber,
+    pricingConfig: { ...state.settings.pricingConfig },
     pricingByCourt: {
       BT1: numberToCurrency(String(formData.get("BT1") || "0")),
       BT2: numberToCurrency(String(formData.get("BT2") || "0")),
@@ -1563,6 +1960,7 @@ async function saveSettings(form) {
   try {
     await submitMutation("config:update", { settings: state.settings }, () => null);
     storeSettingsCache(state.settings);
+    broadcastSettingsChange(state.settings);
     await loadSettingsFromSheet();
     applySettings();
     populateSelects();
@@ -1606,12 +2004,14 @@ async function saveCopySettings(form) {
 
   state.settings = {
     ...state.settings,
+    pricingConfig: { ...state.settings.pricingConfig },
     copy,
   };
 
   try {
     await submitMutation("config:update", { settings: state.settings }, () => null);
     storeSettingsCache(state.settings);
+    broadcastSettingsChange(state.settings);
     await loadSettingsFromSheet();
     applySettings();
     updateConfigStatus("Textos salvos e aplicados com sucesso.");
@@ -1624,11 +2024,7 @@ async function saveCopySettings(form) {
 }
 
 function numberToCurrency(raw) {
-  const value = Number(raw);
-  if (!Number.isFinite(value)) {
-    return "R$ 0,00";
-  }
-  return `R$ ${value.toFixed(2).replace(".", ",")}`;
+  return formatCurrencyBRL(raw);
 }
 
 function currencyToNumber(value) {
@@ -1650,6 +2046,89 @@ function normalizeWhatsAppPhone(value) {
 
 function normalizeWhatsAppPhoneStorage(value) {
   return String(value || "").replace(/\D/g, "");
+}
+
+function formatCpfDisplay(value) {
+  const digits = String(value || "").replace(/\D/g, "").slice(0, 11);
+  if (!digits) {
+    return "";
+  }
+
+  const first = digits.slice(0, 3);
+  const second = digits.slice(3, 6);
+  const third = digits.slice(6, 9);
+  const fourth = digits.slice(9, 11);
+  let result = first;
+
+  if (second) {
+    result += `.${second}`;
+  }
+  if (third) {
+    result += `.${third}`;
+  }
+  if (fourth) {
+    result += `-${fourth}`;
+  }
+
+  return result;
+}
+
+function parseReservationPrice(value) {
+  const parsed = parseCurrencyInput(value, NaN);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function normalizeReservationPeriod(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (normalized === "noturno" || normalized === "night") {
+    return "noturno";
+  }
+  if (normalized === "diurno" || normalized === "day") {
+    return "diurno";
+  }
+  return "";
+}
+
+function parseReservationPricingSnapshot(value) {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    const parsed = typeof value === "string" ? JSON.parse(value) : value;
+    return normalizePricingConfig(parsed);
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
+
+function setFormDisabled(form, disabled) {
+  if (!form) {
+    return;
+  }
+
+  form.querySelectorAll("input, select, textarea, button").forEach((field) => {
+    if (field.type === "submit" && disabled === false && field.dataset.keepDisabled === "1") {
+      return;
+    }
+    field.disabled = disabled;
+  });
+}
+
+function broadcastSettingsChange(settings) {
+  if (!settingsBroadcastChannel) {
+    return;
+  }
+
+  try {
+    settingsBroadcastChannel.postMessage({
+      type: "settings:update",
+      settings,
+    });
+  } catch (error) {
+    console.error(error);
+  }
 }
 
 function updateAdminRouteUI() {

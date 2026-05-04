@@ -150,6 +150,33 @@
           <section id="config-view" class="hidden" data-admin-view-section>
             <div class="admin-grid">
               <article class="admin-card">
+                <h3>Configuração de valores</h3>
+                <p class="fine-print">
+                  Defina o valor da hora no período diurno e noturno. O sistema usa o horário de início do
+                  noturno para calcular automaticamente o valor da reserva.
+                </p>
+                <form id="pricing-form" class="stack-form">
+                  <div class="config-group">
+                    <p class="config-group-title">Preço por período</p>
+                    <label class="field">
+                      <span>Valor diurno</span>
+                      <input name="dayPrice" type="text" inputmode="decimal" placeholder="80,00" required />
+                    </label>
+                    <label class="field">
+                      <span>Valor noturno</span>
+                      <input name="nightPrice" type="text" inputmode="decimal" placeholder="100,00" required />
+                    </label>
+                    <label class="field">
+                      <span>Início do período noturno</span>
+                      <input name="nightStartsAt" type="time" required />
+                    </label>
+                  </div>
+                  <button id="pricing-save-button" class="primary-button" type="submit">Salvar configuração</button>
+                  <small id="pricing-status" class="fine-print"></small>
+                </form>
+              </article>
+
+              <article class="admin-card">
                 <h3>Valores e funcionamento</h3>
                 <form id="settings-form" class="stack-form">
                   <div class="config-group">
@@ -160,7 +187,7 @@
                     </label>
                     <label class="field">
                       <span>WhatsApp da cervejaria</span>
-                      <input name="whatsappPhoneNumber" type="tel" inputmode="tel" placeholder="5511944554650" required />
+                      <input name="whatsappPhoneNumber" type="tel" inputmode="numeric" pattern="\d*" placeholder="5511944554650" required />
                     </label>
                     <label class="field">
                       <span>Funcionamento início</span>

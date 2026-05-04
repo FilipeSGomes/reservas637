@@ -80,6 +80,9 @@ function appendReservation_(spreadsheet, payload) {
     payload.status || "pendente",
     payload.pagamento || "pix",
     payload.observacao || "",
+    payload.price || "",
+    payload.period || "",
+    JSON.stringify(payload.pricingSnapshot || {}),
   ]);
 
   return { ok: true, created: true };
@@ -96,7 +99,7 @@ function confirmReservation_(spreadsheet, payload) {
     throw new Error("Nenhuma reserva encontrada para confirmar.");
   }
 
-  var values = sheet.getRange(2, 1, lastRow - 1, 9).getValues();
+  var values = sheet.getRange(2, 1, lastRow - 1, 12).getValues();
   for (var i = values.length - 1; i >= 0; i -= 1) {
     var row = values[i];
     var sameReservation =
@@ -160,11 +163,28 @@ function updateConfig_(spreadsheet, payload) {
   }
 
   var existingEntries = readKeyValueSheet_(sheet);
+  var pricingConfig = settings.pricingConfig || {};
   var merged = {
     pixKey: String(settings.pixKey || existingEntries.pixKey || "").trim(),
     whatsappPhoneNumber: String(settings.whatsappPhoneNumber || existingEntries.whatsappPhoneNumber || "").trim(),
     openingStart: String(settings.openingStart || existingEntries.openingStart || "07:00").trim(),
     openingEnd: String(settings.openingEnd || existingEntries.openingEnd || "22:00").trim(),
+    "pricing.dayPrice": String(
+      pricingConfig.dayPrice || settings.dayPrice || existingEntries["pricing.dayPrice"] || existingEntries.dayPrice || ""
+    ).trim(),
+    "pricing.nightPrice": String(
+      pricingConfig.nightPrice || settings.nightPrice || existingEntries["pricing.nightPrice"] || existingEntries.nightPrice || ""
+    ).trim(),
+    "pricing.nightStartsAt": String(
+      pricingConfig.nightStartsAt ||
+        settings.nightStartsAt ||
+        existingEntries["pricing.nightStartsAt"] ||
+        existingEntries.nightStartsAt ||
+        "18:00"
+    ).trim(),
+    "pricing.updatedAt": String(
+      pricingConfig.updatedAt || settings.updatedAt || existingEntries["pricing.updatedAt"] || existingEntries.updatedAt || ""
+    ).trim(),
     BT1: String((settings.pricingByCourt && settings.pricingByCourt.BT1) || settings.BT1 || existingEntries.BT1 || "").trim(),
     BT2: String((settings.pricingByCourt && settings.pricingByCourt.BT2) || settings.BT2 || existingEntries.BT2 || "").trim(),
     TN1: String((settings.pricingByCourt && settings.pricingByCourt.TN1) || settings.TN1 || existingEntries.TN1 || "").trim(),
@@ -176,6 +196,10 @@ function updateConfig_(spreadsheet, payload) {
     whatsappPhoneNumber: true,
     openingStart: true,
     openingEnd: true,
+    "pricing.dayPrice": true,
+    "pricing.nightPrice": true,
+    "pricing.nightStartsAt": true,
+    "pricing.updatedAt": true,
     BT1: true,
     BT2: true,
     TN1: true,
@@ -193,6 +217,10 @@ function updateConfig_(spreadsheet, payload) {
     "whatsappPhoneNumber",
     "openingStart",
     "openingEnd",
+    "pricing.dayPrice",
+    "pricing.nightPrice",
+    "pricing.nightStartsAt",
+    "pricing.updatedAt",
     "BT1",
     "BT2",
     "TN1",
@@ -208,7 +236,7 @@ function findReservationRow_(sheet, payload) {
     return null;
   }
 
-  var values = sheet.getRange(2, 1, lastRow - 1, 9).getValues();
+  var values = sheet.getRange(2, 1, lastRow - 1, 12).getValues();
   for (var i = values.length - 1; i >= 0; i -= 1) {
     var row = values[i];
     var sameSlot =
