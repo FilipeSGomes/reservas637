@@ -37,6 +37,7 @@ As colunas precisam permanecer nesta ordem:
 Chaves esperadas em `config`:
 
 - `pixKey`
+- `whatsappPhoneNumber` em dígitos, por exemplo `5511944554650`
 - `openingStart`
 - `openingEnd`
 - `BT1`

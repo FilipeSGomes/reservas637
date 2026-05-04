@@ -152,34 +152,44 @@
               <article class="admin-card">
                 <h3>Valores e funcionamento</h3>
                 <form id="settings-form" class="stack-form">
-                  <label class="field">
-                    <span>Chave PIX</span>
-                    <input name="pixKey" type="text" required />
-                  </label>
-                  <label class="field">
-                    <span>Valor/hora BT1</span>
-                    <input name="BT1" type="number" min="0" step="0.01" required />
-                  </label>
-                  <label class="field">
-                    <span>Valor/hora BT2</span>
-                    <input name="BT2" type="number" min="0" step="0.01" required />
-                  </label>
-                  <label class="field">
-                    <span>Valor/hora TN1</span>
-                    <input name="TN1" type="number" min="0" step="0.01" required />
-                  </label>
-                  <label class="field">
-                    <span>Valor/hora TN2</span>
-                    <input name="TN2" type="number" min="0" step="0.01" required />
-                  </label>
-                  <label class="field">
-                    <span>Funcionamento início</span>
-                    <input name="openingStart" type="time" required />
-                  </label>
-                  <label class="field">
-                    <span>Funcionamento fim</span>
-                    <input name="openingEnd" type="time" required />
-                  </label>
+                  <div class="config-group">
+                    <p class="config-group-title">Funcionamento</p>
+                    <label class="field">
+                      <span>Chave PIX</span>
+                      <input name="pixKey" type="text" required />
+                    </label>
+                    <label class="field">
+                      <span>WhatsApp da cervejaria</span>
+                      <input name="whatsappPhoneNumber" type="tel" inputmode="tel" placeholder="5511944554650" required />
+                    </label>
+                    <label class="field">
+                      <span>Funcionamento início</span>
+                      <input name="openingStart" type="time" required />
+                    </label>
+                    <label class="field">
+                      <span>Funcionamento fim</span>
+                      <input name="openingEnd" type="time" required />
+                    </label>
+                  </div>
+                  <div class="config-group">
+                    <p class="config-group-title">Valores por quadra</p>
+                    <label class="field">
+                      <span>Valor/hora BT1</span>
+                      <input name="BT1" type="number" min="0" step="0.01" required />
+                    </label>
+                    <label class="field">
+                      <span>Valor/hora BT2</span>
+                      <input name="BT2" type="number" min="0" step="0.01" required />
+                    </label>
+                    <label class="field">
+                      <span>Valor/hora TN1</span>
+                      <input name="TN1" type="number" min="0" step="0.01" required />
+                    </label>
+                    <label class="field">
+                      <span>Valor/hora TN2</span>
+                      <input name="TN2" type="number" min="0" step="0.01" required />
+                    </label>
+                  </div>
                   <button class="primary-button" type="submit">Salvar valores</button>
                 </form>
               </article>
@@ -187,78 +197,85 @@
               <article class="admin-card">
                 <h3>Textos do app</h3>
                 <form id="config-form" class="stack-form">
-                  <label class="field">
-                    <span>Card de próximo horário</span>
-                    <input name="quickSlotEyebrow" type="text" />
-                  </label>
-                  <label class="field">
-                    <span>Mensagem de carregamento</span>
-                    <input name="quickSlotLoadingText" type="text" />
-                  </label>
-                  <label class="field">
-                    <span>Título vazio da agenda</span>
-                    <input name="quickSlotEmptyTitle" type="text" />
-                  </label>
-                  <label class="field">
-                    <span>Texto vazio da agenda</span>
-                    <input name="quickSlotEmptyMeta" type="text" />
-                  </label>
-                  <label class="field">
-                    <span>Texto do botão do card</span>
-                    <input name="quickSlotButtonText" type="text" />
-                  </label>
-                  <label class="field">
-                    <span>Rótulo do hero</span>
-                    <input name="heroHoursLabel" type="text" />
-                  </label>
-                  <label class="field">
-                    <span>Descrição do hero</span>
-                    <input name="heroHoursDescription" type="text" />
-                  </label>
-                  <label class="field">
-                    <span>Rótulo da agenda</span>
-                    <input name="scheduleEyebrow" type="text" />
-                  </label>
-                  <label class="field">
-                    <span>Título da agenda</span>
-                    <input name="scheduleTitle" type="text" />
-                  </label>
-                  <label class="field">
-                    <span>Texto do PIX</span>
-                    <input name="bookingPixLabel" type="text" />
-                  </label>
-                  <label class="field">
-                    <span>Título da opção PIX</span>
-                    <input name="bookingPixTitle" type="text" />
-                  </label>
-                  <label class="field">
-                    <span>Subtítulo da opção PIX</span>
-                    <input name="bookingPixSubtitle" type="text" />
-                  </label>
-                  <label class="field">
-                    <span>Instrução do PIX</span>
-                    <input name="bookingPixInstruction" type="text" />
-                  </label>
-                  <label class="field">
-                    <span>Título do faturamento</span>
-                    <input name="bookingBillingTitle" type="text" />
-                  </label>
-                  <label class="field">
-                    <span>Subtítulo do faturamento</span>
-                    <input name="bookingBillingSubtitle" type="text" />
-                  </label>
-                  <label class="field">
-                    <span>Texto do faturamento</span>
-                    <input name="bookingBillingNotice" type="text" />
-                  </label>
-                  <label class="field">
-                    <span>Status de faturamento</span>
-                    <input name="billingStatusText" type="text" />
-                  </label>
-                  <label class="field">
-                    <span>Mensagem do WhatsApp</span>
-                    <textarea name="pixWhatsAppMessage" rows="5"></textarea>
-                  </label>
+                  <div class="config-group">
+                    <p class="config-group-title">Tela inicial</p>
+                    <label class="field">
+                      <span>Card de próximo horário</span>
+                      <input name="quickSlotEyebrow" type="text" />
+                    </label>
+                    <label class="field">
+                      <span>Mensagem de carregamento</span>
+                      <input name="quickSlotLoadingText" type="text" />
+                    </label>
+                    <label class="field">
+                      <span>Título vazio da agenda</span>
+                      <input name="quickSlotEmptyTitle" type="text" />
+                    </label>
+                    <label class="field">
+                      <span>Texto vazio da agenda</span>
+                      <input name="quickSlotEmptyMeta" type="text" />
+                    </label>
+                    <label class="field">
+                      <span>Texto do botão do card</span>
+                      <input name="quickSlotButtonText" type="text" />
+                    </label>
+                    <label class="field">
+                      <span>Rótulo do hero</span>
+                      <input name="heroHoursLabel" type="text" />
+                    </label>
+                    <label class="field">
+                      <span>Descrição do hero</span>
+                      <input name="heroHoursDescription" type="text" />
+                    </label>
+                    <label class="field">
+                      <span>Rótulo da agenda</span>
+                      <input name="scheduleEyebrow" type="text" />
+                    </label>
+                    <label class="field">
+                      <span>Título da agenda</span>
+                      <input name="scheduleTitle" type="text" />
+                    </label>
+                  </div>
+                  <div class="config-group">
+                    <p class="config-group-title">Pagamento e WhatsApp</p>
+                    <label class="field">
+                      <span>Texto do PIX</span>
+                      <input name="bookingPixLabel" type="text" />
+                    </label>
+                    <label class="field">
+                      <span>Título da opção PIX</span>
+                      <input name="bookingPixTitle" type="text" />
+                    </label>
+                    <label class="field">
+                      <span>Subtítulo da opção PIX</span>
+                      <input name="bookingPixSubtitle" type="text" />
+                    </label>
+                    <label class="field">
+                      <span>Instrução do PIX</span>
+                      <input name="bookingPixInstruction" type="text" />
+                    </label>
+                    <label class="field">
+                      <span>Título do faturamento</span>
+                      <input name="bookingBillingTitle" type="text" />
+                    </label>
+                    <label class="field">
+                      <span>Subtítulo do faturamento</span>
+                      <input name="bookingBillingSubtitle" type="text" />
+                    </label>
+                    <label class="field">
+                      <span>Texto do faturamento</span>
+                      <input name="bookingBillingNotice" type="text" />
+                    </label>
+                    <label class="field">
+                      <span>Status de faturamento</span>
+                      <input name="billingStatusText" type="text" />
+                    </label>
+                    <label class="field">
+                      <span>Mensagem do WhatsApp</span>
+                      <textarea name="pixWhatsAppMessage" rows="5"></textarea>
+                    </label>
+                    <button class="primary-button" type="submit">Salvar textos</button>
+                  </div>
                   <small id="config-status" class="fine-print"></small>
                 </form>
               </article>

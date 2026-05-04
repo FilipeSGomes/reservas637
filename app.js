@@ -57,6 +57,7 @@ const DEFAULT_COPY = {
 
 const DEFAULT_SETTINGS = {
   pixKey: "pix@quadras.com",
+  whatsappPhoneNumber: "5511944554650",
   pricingByCourt: {
     BT1: "R$ 80,00",
     BT2: "R$ 80,00",
@@ -407,6 +408,11 @@ function configRowsToSettings(rows) {
 
     if (key === "pixKey" || key === "openingStart" || key === "openingEnd") {
       next[key] = value || next[key];
+      return;
+    }
+
+    if (key === "whatsappPhoneNumber") {
+      next.whatsappPhoneNumber = normalizeWhatsAppPhoneStorage(value) || next.whatsappPhoneNumber;
       return;
     }
 
@@ -1251,6 +1257,9 @@ function readSettings() {
     const parsed = JSON.parse(raw);
     return {
       pixKey: parsed.pixKey || DEFAULT_SETTINGS.pixKey,
+      whatsappPhoneNumber: normalizeWhatsAppPhoneStorage(
+        parsed.whatsappPhoneNumber || DEFAULT_SETTINGS.whatsappPhoneNumber
+      ) || DEFAULT_SETTINGS.whatsappPhoneNumber,
       pricingByCourt: { ...DEFAULT_SETTINGS.pricingByCourt, ...(parsed.pricingByCourt || {}) },
       openingStart: parsed.openingStart || DEFAULT_SETTINGS.openingStart,
       openingEnd: parsed.openingEnd || DEFAULT_SETTINGS.openingEnd,
@@ -1355,6 +1364,7 @@ function fillSettingsForm() {
     return;
   }
   elements.settingsForm.elements.pixKey.value = state.settings.pixKey;
+  elements.settingsForm.elements.whatsappPhoneNumber.value = state.settings.whatsappPhoneNumber;
   elements.settingsForm.elements.BT1.value = currencyToNumber(state.settings.pricingByCourt.BT1);
   elements.settingsForm.elements.BT2.value = currencyToNumber(state.settings.pricingByCourt.BT2);
   elements.settingsForm.elements.TN1.value = currencyToNumber(state.settings.pricingByCourt.TN1);
@@ -1484,7 +1494,9 @@ function updatePixWhatsappLink() {
     .replace(/\{date\}/g, formatDate(state.selectedDate))
     .replace(/\{time\}/g, state.selectedSlot.time)
     .replace(/\{amount\}/g, amount);
-  elements.pixWhatsappLink.href = `https://wa.me/?text=${encodeURIComponent(message)}`;
+  const phoneNumber = normalizeWhatsAppPhone(state.settings.whatsappPhoneNumber || DEFAULT_SETTINGS.whatsappPhoneNumber);
+  const whatsappUrl = phoneNumber ? `https://wa.me/${phoneNumber}` : "https://wa.me/";
+  elements.pixWhatsappLink.href = `${whatsappUrl}?text=${encodeURIComponent(message)}`;
 }
 
 function showBookingConfirmation(booking) {
@@ -1536,6 +1548,8 @@ async function saveSettings(form) {
   }
   state.settings = {
     pixKey: String(formData.get("pixKey") || "").trim(),
+    whatsappPhoneNumber:
+      normalizeWhatsAppPhoneStorage(formData.get("whatsappPhoneNumber")) || DEFAULT_SETTINGS.whatsappPhoneNumber,
     pricingByCourt: {
       BT1: numberToCurrency(String(formData.get("BT1") || "0")),
       BT2: numberToCurrency(String(formData.get("BT2") || "0")),
@@ -1621,6 +1635,21 @@ function currencyToNumber(value) {
   const normalized = String(value || "").replace(/[^\d,.-]/g, "").replace(",", ".");
   const parsed = Number(normalized);
   return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function normalizeWhatsAppPhone(value) {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (!digits) {
+    return "";
+  }
+  if (digits.startsWith("55")) {
+    return digits;
+  }
+  return `55${digits}`;
+}
+
+function normalizeWhatsAppPhoneStorage(value) {
+  return String(value || "").replace(/\D/g, "");
 }
 
 function updateAdminRouteUI() {

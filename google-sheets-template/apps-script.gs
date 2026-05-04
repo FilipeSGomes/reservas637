@@ -162,6 +162,7 @@ function updateConfig_(spreadsheet, payload) {
   var existingEntries = readKeyValueSheet_(sheet);
   var merged = {
     pixKey: String(settings.pixKey || existingEntries.pixKey || "").trim(),
+    whatsappPhoneNumber: String(settings.whatsappPhoneNumber || existingEntries.whatsappPhoneNumber || "").trim(),
     openingStart: String(settings.openingStart || existingEntries.openingStart || "07:00").trim(),
     openingEnd: String(settings.openingEnd || existingEntries.openingEnd || "22:00").trim(),
     BT1: String((settings.pricingByCourt && settings.pricingByCourt.BT1) || settings.BT1 || existingEntries.BT1 || "").trim(),
@@ -172,6 +173,7 @@ function updateConfig_(spreadsheet, payload) {
 
   var knownKeys = {
     pixKey: true,
+    whatsappPhoneNumber: true,
     openingStart: true,
     openingEnd: true,
     BT1: true,
@@ -188,6 +190,7 @@ function updateConfig_(spreadsheet, payload) {
 
   writeKeyValueSheet_(sheet, merged, [
     "pixKey",
+    "whatsappPhoneNumber",
     "openingStart",
     "openingEnd",
     "BT1",
