@@ -36,6 +36,7 @@ const DEFAULT_SETTINGS = {
 };
 
 let loadingOverlayCounter = 0;
+let loadingOverlayTimeoutId = null;
 
 const state = {
   selectedDate: getToday(),
@@ -164,31 +165,50 @@ function attachEvents() {
 
 async function loadAgenda() {
   updateBanner("Atualizando grade...");
-  try {
-    const [reservations, blocks] = await Promise.all([
-      fetchSheetRows("reservas"),
-      fetchSheetRows("bloqueios"),
-    ]);
+  const [reservationsResult, blocksResult] = await Promise.allSettled([
+    fetchSheetRows("reservas"),
+    fetchSheetRows("bloqueios"),
+  ]);
 
-    state.reservations = reservations.filter((row) => row.data === state.selectedDate);
-    state.blocks = blocks.filter((row) => row.data === state.selectedDate);
+  const localData = readLocalData();
 
-    renderSchedule();
-    renderAdminReservations();
+  if (reservationsResult.status === "fulfilled") {
+    state.reservations = reservationsResult.value.filter((row) => row.data === state.selectedDate);
+  } else {
+    console.error(reservationsResult.reason);
+    state.reservations = localData.reservations.filter((row) => row.data === state.selectedDate);
+  }
 
+  if (blocksResult.status === "fulfilled") {
+    state.blocks = blocksResult.value.filter((row) => row.data === state.selectedDate);
+  } else {
+    console.error(blocksResult.reason);
+    state.blocks = localData.blocks.filter((row) => row.data === state.selectedDate);
+  }
+
+  renderSchedule();
+  renderAdminReservations();
+
+  if (reservationsResult.status === "fulfilled" && blocksResult.status === "fulfilled") {
     updateBanner(
       APP_CONFIG.spreadsheetId
         ? `Agenda carregada para ${formatDate(state.selectedDate)}.`
         : "Modo local ativo. Configure Google Sheets e Apps Script em `app.js` para produção."
     );
-  } catch (error) {
-    console.error(error);
-    updateBanner("Falha ao carregar agenda. Usando dados locais quando disponíveis.", true);
-    state.reservations = readLocalData().reservations.filter((row) => row.data === state.selectedDate);
-    state.blocks = readLocalData().blocks.filter((row) => row.data === state.selectedDate);
-    renderSchedule();
-    renderAdminReservations();
+    return;
   }
+
+  if (reservationsResult.status === "rejected" && blocksResult.status === "rejected") {
+    updateBanner("Falha ao carregar reservas e bloqueios. Usando dados locais quando disponíveis.", true);
+    return;
+  }
+
+  if (reservationsResult.status === "rejected") {
+    updateBanner("Falha ao carregar reservas. Bloqueios foram carregados normalmente.", true);
+    return;
+  }
+
+  updateBanner("Falha ao carregar bloqueios. Reservas foram carregadas normalmente.", true);
 }
 
 async function fetchSheetRows(sheetName) {
@@ -239,6 +259,7 @@ function renderSchedule() {
   }
 
   elements.scheduleGrid.innerHTML = "";
+  const visibleHours = getCurrentHours().filter((time) => !isPastTimeSlot(state.selectedDate, time));
 
   const fullDayBlock = getFullDayBlock();
   if (fullDayBlock) {
@@ -263,7 +284,7 @@ function renderSchedule() {
     const list = document.createElement("div");
     list.className = "slot-list";
 
-    getCurrentHours().forEach((time) => {
+    visibleHours.forEach((time) => {
       const slotState = getSlotState(court.id, time);
       const card = document.createElement("button");
       card.type = "button";
@@ -1129,6 +1150,15 @@ function showLoading() {
   if (!overlay) {
     return;
   }
+  if (loadingOverlayTimeoutId) {
+    clearTimeout(loadingOverlayTimeoutId);
+  }
+  loadingOverlayTimeoutId = window.setTimeout(() => {
+    loadingOverlayCounter = 0;
+    overlay.classList.add("hidden");
+    overlay.setAttribute("aria-hidden", "true");
+    loadingOverlayTimeoutId = null;
+  }, 10000);
   overlay.classList.remove("hidden");
   overlay.setAttribute("aria-hidden", "false");
 }
@@ -1138,6 +1168,10 @@ function hideLoading() {
   const overlay = document.querySelector("#global-loading-overlay");
   if (!overlay || loadingOverlayCounter > 0) {
     return;
+  }
+  if (loadingOverlayTimeoutId) {
+    clearTimeout(loadingOverlayTimeoutId);
+    loadingOverlayTimeoutId = null;
   }
   overlay.classList.add("hidden");
   overlay.setAttribute("aria-hidden", "true");

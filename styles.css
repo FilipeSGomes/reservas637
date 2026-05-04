@@ -483,6 +483,10 @@ h1 {
   pointer-events: all;
 }
 
+.global-loading-overlay.hidden {
+  display: none;
+}
+
 .global-loading-content {
   display: flex;
   flex-direction: column;
