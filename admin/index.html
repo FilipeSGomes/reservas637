@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#676b2a" />
+    <title>637 Cervejaria | Admin</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon-32.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../icons/apple-touch-icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Manrope:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <div class="hero-content">
+          <p class="eyebrow">637 Cervejaria • Administração</p>
+          <h1>Painel administrativo das quadras.</h1>
+          <p class="hero-copy">Acesso restrito para gestão de reservas, bloqueios e configurações.</p>
+        </div>
+      </header>
+
+      <main>
+        <section id="admin-login" class="admin-panel" aria-hidden="false">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Login</p>
+              <h2>Entrar no Admin</h2>
+            </div>
+          </div>
+          <form id="admin-login-form" class="stack-form" autocomplete="off">
+            <label class="field">
+              <span>Senha</span>
+              <input id="admin-password-input" name="password" type="password" required />
+            </label>
+            <button class="primary-button" type="submit">Acessar</button>
+          </form>
+        </section>
+
+        <section class="toolbar">
+          <label class="field">
+            <span>Data</span>
+            <input id="date-input" type="date" />
+          </label>
+          <div class="legend">
+            <span><i class="legend-dot available"></i>Disponível</span>
+            <span><i class="legend-dot pending"></i>Pendente</span>
+            <span><i class="legend-dot confirmed"></i>Confirmado</span>
+            <span><i class="legend-dot blocked"></i>Bloqueado</span>
+            <span><i class="legend-dot billed"></i>Faturado</span>
+          </div>
+        </section>
+
+        <section class="status-banner" id="status-banner"></section>
+
+        <section class="schedule-section">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Grade visual</p>
+              <h2>Agenda por quadra e horário</h2>
+            </div>
+            <button id="refresh-button" class="secondary-button" type="button">Atualizar agenda</button>
+          </div>
+          <div id="schedule-grid" class="schedule-grid"></div>
+        </section>
+
+        <section id="admin-panel" class="admin-panel hidden" aria-hidden="true">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Admin</p>
+              <h2>Reservas, bloqueios e configurações</h2>
+            </div>
+            <button id="admin-exit-button" class="ghost-button" type="button">Sair</button>
+          </div>
+
+          <div class="admin-grid">
+            <article class="admin-card">
+              <div class="admin-card-heading">
+                <h3>Reservas</h3>
+                <button id="admin-refresh-button" class="mini-button" type="button">Atualizar pendências</button>
+              </div>
+              <div id="admin-reservations" class="admin-list"></div>
+            </article>
+
+            <article class="admin-card">
+              <h3>Bloquear horário</h3>
+              <form id="block-form" class="stack-form">
+                <label class="field">
+                  <span>Quadra</span>
+                  <select name="court" required></select>
+                </label>
+                <label class="field">
+                  <span>Tipo</span>
+                  <select name="type" required>
+                    <option value="Aula">Aula</option>
+                    <option value="Evento particular">Evento particular</option>
+                    <option value="Manutenção">Manutenção</option>
+                    <option value="Day use">Day use</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Início</span>
+                  <select name="startTime" required></select>
+                </label>
+                <label class="field">
+                  <span>Fim</span>
+                  <select name="endTime" required></select>
+                </label>
+                <label class="field">
+                  <span>Motivo</span>
+                  <input name="reason" type="text" maxlength="80" required />
+                </label>
+                <button class="primary-button" type="submit">Registrar bloqueio de faixa</button>
+              </form>
+            </article>
+
+            <article class="admin-card">
+              <h3>Bloquear dia inteiro</h3>
+              <form id="day-block-form" class="stack-form">
+                <label class="field">
+                  <span>Motivo</span>
+                  <input name="reason" type="text" maxlength="80" placeholder="Evento fechado, manutenção geral..." required />
+                </label>
+                <label class="field">
+                  <span>Tipo</span>
+                  <select name="type" required>
+                    <option value="Manutenção">Manutenção</option>
+                    <option value="Evento particular">Evento particular</option>
+                    <option value="Aula">Aula</option>
+                    <option value="Day use">Day use</option>
+                  </select>
+                </label>
+                <button class="primary-button" type="submit">Bloquear dia inteiro</button>
+              </form>
+            </article>
+
+            <article class="admin-card">
+              <h3>Configurações</h3>
+              <form id="settings-form" class="stack-form">
+                <label class="field">
+                  <span>Chave PIX</span>
+                  <input name="pixKey" type="text" required />
+                </label>
+                <label class="field">
+                  <span>Valor/hora BT1</span>
+                  <input name="BT1" type="number" min="0" step="0.01" required />
+                </label>
+                <label class="field">
+                  <span>Valor/hora BT2</span>
+                  <input name="BT2" type="number" min="0" step="0.01" required />
+                </label>
+                <label class="field">
+                  <span>Valor/hora TN1</span>
+                  <input name="TN1" type="number" min="0" step="0.01" required />
+                </label>
+                <label class="field">
+                  <span>Valor/hora TN2</span>
+                  <input name="TN2" type="number" min="0" step="0.01" required />
+                </label>
+                <label class="field">
+                  <span>Funcionamento início</span>
+                  <input name="openingStart" type="time" required />
+                </label>
+                <label class="field">
+                  <span>Funcionamento fim</span>
+                  <input name="openingEnd" type="time" required />
+                </label>
+                <button class="primary-button" type="submit">Salvar configurações</button>
+              </form>
+            </article>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="../app.js"></script>
+  </body>
+</html>

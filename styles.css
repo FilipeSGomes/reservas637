@@ -264,6 +264,22 @@ h1 {
   background: var(--gray);
 }
 
+.blocked-aula {
+  background: #7e5ab8;
+}
+
+.blocked-event {
+  background: #2d668f;
+}
+
+.blocked-maintenance {
+  background: #8d4d35;
+}
+
+.blocked-dayuse {
+  background: #2d7a5f;
+}
+
 .billed {
   background: var(--blue);
 }
@@ -379,9 +395,46 @@ h1 {
   color: #33413a;
 }
 
+.slot-card.blocked-aula {
+  background: #efe7ff;
+  color: #3d245f;
+}
+
+.slot-card.blocked-event {
+  background: #dbeaf3;
+  color: #12334a;
+}
+
+.slot-card.blocked-maintenance {
+  background: #f4ddd4;
+  color: #4a2214;
+}
+
+.slot-card.blocked-dayuse {
+  background: #def1e9;
+  color: #154133;
+}
+
 .slot-card.billed {
   background: var(--blue-soft);
   color: #12334a;
+}
+
+.schedule-day-block {
+  border-radius: 20px;
+  padding: 20px;
+  border: 1px solid rgba(141, 77, 53, 0.25);
+  background: #f7e9e3;
+}
+
+.schedule-day-block h3,
+.schedule-day-block p {
+  margin: 0;
+}
+
+.schedule-day-block p {
+  margin-top: 8px;
+  color: #5f3121;
 }
 
 .slot-card-top,

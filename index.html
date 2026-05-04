@@ -52,13 +52,6 @@
             <p class="hero-card-label">Horário de funcionamento</p>
             <strong>07h às 22h</strong>
             <p>Blocos de 1 hora para Beach Tennis e Tênis.</p>
-            <button
-              id="admin-access-button"
-              class="ghost-button admin-access-button"
-              type="button"
-            >
-              Admin
-            </button>
           </div>
         </div>
       </header>
@@ -93,56 +86,6 @@
           <div id="schedule-grid" class="schedule-grid"></div>
         </section>
 
-        <section id="admin-panel" class="admin-panel hidden" aria-hidden="true">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Admin</p>
-              <h2>Reservas e bloqueios do dia</h2>
-            </div>
-            <button id="admin-exit-button" class="ghost-button" type="button">
-              Fechar painel
-            </button>
-          </div>
-
-          <div class="admin-grid">
-            <article class="admin-card">
-              <div class="admin-card-heading">
-                <h3>Reservas</h3>
-                <button id="admin-refresh-button" class="mini-button" type="button">
-                  Atualizar pendências
-                </button>
-              </div>
-              <div id="admin-reservations" class="admin-list"></div>
-            </article>
-
-            <article class="admin-card">
-              <h3>Bloquear horário</h3>
-              <form id="block-form" class="stack-form">
-                <label class="field">
-                  <span>Quadra</span>
-                  <select name="court" required></select>
-                </label>
-                <label class="field">
-                  <span>Horário</span>
-                  <select name="time" required></select>
-                </label>
-                <label class="field">
-                  <span>Motivo</span>
-                  <input
-                    name="reason"
-                    type="text"
-                    maxlength="80"
-                    placeholder="Manutenção, aula, evento..."
-                    required
-                  />
-                </label>
-                <button class="primary-button" type="submit">
-                  Registrar bloqueio
-                </button>
-              </form>
-            </article>
-          </div>
-        </section>
       </main>
     </div>
 
