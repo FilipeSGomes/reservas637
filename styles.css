@@ -36,7 +36,8 @@ body {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 
@@ -239,7 +240,8 @@ h1 {
 }
 
 .field input,
-.field select {
+.field select,
+.field textarea {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 14px;
@@ -247,6 +249,11 @@ h1 {
   padding: 12px 14px;
   background: white;
   color: var(--text);
+}
+
+.field textarea {
+  min-height: 120px;
+  resize: vertical;
 }
 
 .legend {
@@ -603,6 +610,12 @@ h1 {
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 14px;
+}
+
+.admin-section-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .admin-card-heading h3 {

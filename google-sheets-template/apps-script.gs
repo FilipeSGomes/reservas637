@@ -23,6 +23,10 @@ function doPost(e) {
       return jsonResponse_(appendBlock_(spreadsheet, payload));
     }
 
+    if (action === "config:update") {
+      return jsonResponse_(updateConfig_(spreadsheet, payload));
+    }
+
     return jsonResponse_({ ok: false, error: "Acao invalida" });
   } catch (error) {
     return jsonResponse_({ ok: false, error: String(error) });
@@ -148,6 +152,53 @@ function appendBlock_(spreadsheet, payload) {
   return { ok: true, created: true };
 }
 
+function updateConfig_(spreadsheet, payload) {
+  var settings = payload.settings || payload || {};
+  var sheet = spreadsheet.getSheetByName("config");
+  if (!sheet) {
+    sheet = spreadsheet.insertSheet("config");
+  }
+
+  var existingEntries = readKeyValueSheet_(sheet);
+  var merged = {
+    pixKey: String(settings.pixKey || existingEntries.pixKey || "").trim(),
+    openingStart: String(settings.openingStart || existingEntries.openingStart || "07:00").trim(),
+    openingEnd: String(settings.openingEnd || existingEntries.openingEnd || "22:00").trim(),
+    BT1: String((settings.pricingByCourt && settings.pricingByCourt.BT1) || settings.BT1 || existingEntries.BT1 || "").trim(),
+    BT2: String((settings.pricingByCourt && settings.pricingByCourt.BT2) || settings.BT2 || existingEntries.BT2 || "").trim(),
+    TN1: String((settings.pricingByCourt && settings.pricingByCourt.TN1) || settings.TN1 || existingEntries.TN1 || "").trim(),
+    TN2: String((settings.pricingByCourt && settings.pricingByCourt.TN2) || settings.TN2 || existingEntries.TN2 || "").trim(),
+  };
+
+  var knownKeys = {
+    pixKey: true,
+    openingStart: true,
+    openingEnd: true,
+    BT1: true,
+    BT2: true,
+    TN1: true,
+    TN2: true,
+  };
+
+  Object.keys(existingEntries).forEach(function (key) {
+    if (!knownKeys[key]) {
+      merged[key] = existingEntries[key];
+    }
+  });
+
+  writeKeyValueSheet_(sheet, merged, [
+    "pixKey",
+    "openingStart",
+    "openingEnd",
+    "BT1",
+    "BT2",
+    "TN1",
+    "TN2",
+  ]);
+
+  return { ok: true, updated: true };
+}
+
 function findReservationRow_(sheet, payload) {
   var lastRow = sheet.getLastRow();
   if (lastRow < 2) {
@@ -198,6 +249,46 @@ function validateRequired_(payload, fields) {
       throw new Error("Campo obrigatorio ausente: " + field + ".");
     }
   });
+}
+
+function readKeyValueSheet_(sheet) {
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) {
+    return {};
+  }
+
+  var values = sheet.getRange(2, 1, lastRow - 1, 2).getValues();
+  var map = {};
+  values.forEach(function (row) {
+    var key = String(row[0] || "").trim();
+    if (!key) {
+      return;
+    }
+    map[key] = String(row[1] || "").trim();
+  });
+  return map;
+}
+
+function writeKeyValueSheet_(sheet, entries, orderedKeys) {
+  var rows = [["chave", "valor"]];
+  var written = {};
+
+  orderedKeys.forEach(function (key) {
+    if (Object.prototype.hasOwnProperty.call(entries, key)) {
+      rows.push([key, entries[key]]);
+      written[key] = true;
+    }
+  });
+
+  Object.keys(entries).sort().forEach(function (key) {
+    if (written[key]) {
+      return;
+    }
+    rows.push([key, entries[key]]);
+  });
+
+  sheet.clearContents();
+  sheet.getRange(1, 1, rows.length, 2).setValues(rows);
 }
 
 function validateNotPastDate_(value) {

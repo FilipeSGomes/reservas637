@@ -3,15 +3,9 @@ const APP_CONFIG = {
   spreadsheetId: "1yAY3OEWCv0Be3c7YxhTl70rTNBWqJAUXknpU5-UkNXc",
   appsScriptWebhookUrl: "https://script.google.com/macros/s/AKfycbxAQeWPiF0Nhi0ZSJwMFKa7ni6YiMEX5KIfScXfYH0B5C4mwDh56GyIKmylj8UF28m2/exec",
   adminPassword: "637admin",
-  pixKey: "pix@quadras.com",
-  pricingByCourt: {
-    BT1: "R$ 80,00",
-    BT2: "R$ 80,00",
-    TN1: "R$ 100,00",
-    TN2: "R$ 100,00",
-  },
 };
 
+const CONFIG_SHEET_NAME = "config";
 const sheetsUrl = `https://docs.google.com/spreadsheets/d/${APP_CONFIG.spreadsheetId}/gviz/tq?tqx=out:json`;
 
 const COURTS = [
@@ -27,13 +21,51 @@ const FULL_DAY_BLOCK_SENTINEL = "__FULL_DAY__";
 const ADMIN_AUTH_STORAGE_KEY = "quadras-admin-auth";
 const LAST_BOOKING_CONTACT_KEY = "quadras-last-booking-contact";
 
+const DEFAULT_COPY = {
+  quickSlotEyebrow: "Próximo horário livre",
+  quickSlotLoadingText: "Buscando o melhor horário para você...",
+  quickSlotEmptyTitle: "Sem horários livres para este dia",
+  quickSlotEmptyMeta: "Troque a data para ver os próximos horários disponíveis.",
+  quickSlotButtonText: "Reservar este horário",
+  heroHoursLabel: "Horário de funcionamento",
+  heroHoursDescription: "Blocos de 1 hora para Beach Tennis e Tênis.",
+  scheduleEyebrow: "Grade visual",
+  scheduleTitle: "Agenda por quadra e horário",
+  preBookingEyebrow: "Pré-reserva",
+  preBookingAmountLabel: "Valor da hora",
+  preBookingRules:
+    "Ao confirmar, você concorda com as regras de uso da quadra. Cancelamentos devem ser feitos com 2h de antecedência.",
+  continueBookingText: "Continuar",
+  bookingEyebrow: "Nova reserva",
+  bookingPaymentTitle: "Forma de pagamento",
+  bookingPixTitle: "PIX",
+  bookingPixSubtitle: "Status pendente até confirmação do admin.",
+  bookingBillingTitle: "Faturamento",
+  bookingBillingSubtitle: "Pagamento no final do mês.",
+  bookingPixLabel: "Pagamento via PIX",
+  bookingPixInstruction: "Envie o comprovante pelo WhatsApp.",
+  bookingBillingNotice: "Valor será lançado na sua conta. Pagamento no final do mês.",
+  billingStatusText: "Pagamento no final do mês.",
+  pixWhatsAppMessage: "Olá! Segue comprovante da reserva:\nQuadra: {court}\nData: {date}\nHorário: {time}\nValor: {amount}",
+  bookingNextText: "Escolher pagamento",
+  bookingSubmitText: "Enviar solicitação",
+  bookingReuseText: "Reservar novamente",
+  confirmationEyebrow: "Solicitação enviada",
+  confirmationTitle: "Resumo da sua reserva",
+  confirmationCloseText: "Fechar",
+};
+
 const DEFAULT_SETTINGS = {
-  pixKey: APP_CONFIG.pixKey,
+  pixKey: "pix@quadras.com",
   pricingByCourt: {
-    ...APP_CONFIG.pricingByCourt,
+    BT1: "R$ 80,00",
+    BT2: "R$ 80,00",
+    TN1: "R$ 100,00",
+    TN2: "R$ 100,00",
   },
   openingStart: "07:00",
   openingEnd: "22:00",
+  copy: { ...DEFAULT_COPY },
 };
 
 let loadingOverlayCounter = 0;
@@ -57,7 +89,15 @@ const elements = {
   quickSlotTitle: document.querySelector("#quick-slot-title"),
   quickSlotMeta: document.querySelector("#quick-slot-meta"),
   quickSlotBookButton: document.querySelector("#quick-slot-book-button"),
+  quickSlotEyebrow: document.querySelector("#quick-slot-eyebrow"),
+  heroHoursTag: document.querySelector("#hero-hours-tag"),
+  heroHoursRange: document.querySelector("#hero-hours-range"),
+  heroHoursLabel: document.querySelector("#hero-hours-label"),
+  heroHoursDescription: document.querySelector("#hero-hours-description"),
+  scheduleEyebrow: document.querySelector("#schedule-eyebrow"),
+  scheduleTitle: document.querySelector("#schedule-title"),
   bookingConfirmation: document.querySelector("#booking-confirmation"),
+  bookingConfirmationEyebrow: document.querySelector("#booking-confirmation-eyebrow"),
   bookingConfirmationTitle: document.querySelector("#booking-confirmation-title"),
   bookingConfirmationMeta: document.querySelector("#booking-confirmation-meta"),
   bookingConfirmationNextStep: document.querySelector("#booking-confirmation-next-step"),
@@ -66,7 +106,10 @@ const elements = {
   scheduleGrid: document.querySelector("#schedule-grid"),
   refreshButton: document.querySelector("#refresh-button"),
   preBookingModal: document.querySelector("#pre-booking-modal"),
+  preBookingEyebrow: document.querySelector("#pre-booking-eyebrow"),
   preBookingTitle: document.querySelector("#pre-booking-title"),
+  preBookingAmountLabel: document.querySelector("#pre-booking-amount-label"),
+  preBookingRules: document.querySelector("#pre-booking-rules"),
   preBookingAmount: document.querySelector("#pre-booking-amount"),
   closePreBookingButton: document.querySelector("#close-pre-booking-button"),
   cancelPreBookingButton: document.querySelector("#cancel-pre-booking-button"),
@@ -76,11 +119,19 @@ const elements = {
   bookingSlotTitle: document.querySelector("#booking-slot-title"),
   bookingRegistrationStep: document.querySelector("#booking-registration-step"),
   bookingPaymentStep: document.querySelector("#booking-payment-step"),
+  bookingPaymentTitle: document.querySelector("#booking-payment-title"),
   bookingNextButton: document.querySelector("#booking-next-button"),
   bookingSubmitButton: document.querySelector("#booking-submit-button"),
   bookingReuseButton: document.querySelector("#booking-reuse-button"),
   pixPaymentBox: document.querySelector("#pix-payment-box"),
   pixWhatsappLink: document.querySelector("#pix-whatsapp-link"),
+  bookingPixTitle: document.querySelector("#booking-pix-title"),
+  bookingPixSubtitle: document.querySelector("#booking-pix-subtitle"),
+  bookingBillingTitle: document.querySelector("#booking-billing-title"),
+  bookingBillingSubtitle: document.querySelector("#booking-billing-subtitle"),
+  bookingPixLabel: document.querySelector("#booking-pix-label"),
+  bookingPixInstruction: document.querySelector("#booking-pix-instruction"),
+  bookingBillingNotice: document.querySelector("#booking-billing-notice"),
   billingPaymentBox: document.querySelector("#billing-payment-box"),
   pixKey: document.querySelector("#pix-key"),
   pixAmount: document.querySelector("#pix-amount"),
@@ -94,14 +145,22 @@ const elements = {
   adminRefreshButton: document.querySelector("#admin-refresh-button"),
   adminPanel: document.querySelector("#admin-panel"),
   adminReservations: document.querySelector("#admin-reservations"),
+  operationsView: document.querySelector("#operations-view"),
+  configView: document.querySelector("#config-view"),
+  operationsViewButton: document.querySelector("#operations-view-button"),
+  configViewButton: document.querySelector("#config-view-button"),
+  configForm: document.querySelector("#config-form"),
+  configStatus: document.querySelector("#config-status"),
   blockForm: document.querySelector("#block-form"),
   dayBlockForm: document.querySelector("#day-block-form"),
   settingsForm: document.querySelector("#settings-form"),
 };
 
-boot();
+boot().catch((error) => {
+  console.error(error);
+});
 
-function boot() {
+async function boot() {
   ensureLoadingOverlay();
   window.showLoading = showLoading;
   window.hideLoading = hideLoading;
@@ -114,6 +173,7 @@ function boot() {
   if (elements.bookingForm) {
     elements.bookingForm.noValidate = true;
   }
+  await loadSettingsFromSheet();
   applySettings();
   populateSelects();
   attachEvents();
@@ -199,11 +259,20 @@ function attachEvents() {
     event.preventDefault();
     await saveSettings(event.currentTarget);
   });
+  elements.configForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await saveCopySettings(event.currentTarget);
+  });
+  elements.operationsViewButton?.addEventListener("click", () => showAdminView("operations"));
+  elements.configViewButton?.addEventListener("click", () => showAdminView("config"));
 }
 
 async function loadAgenda() {
   updateBanner("Atualizando horários disponíveis...");
   elements.quickSlot?.classList.add("loading");
+  if (elements.quickSlotTitle) {
+    elements.quickSlotTitle.textContent = (state.settings.copy || DEFAULT_SETTINGS.copy).quickSlotLoadingText;
+  }
   const [reservationsResult, blocksResult] = await Promise.allSettled([
     fetchSheetRows("reservas"),
     fetchSheetRows("bloqueios"),
@@ -252,8 +321,28 @@ async function loadAgenda() {
   updateBanner("Não conseguimos atualizar os bloqueios agora. Tente novamente em instantes.", true);
 }
 
+async function loadSettingsFromSheet() {
+  if (!APP_CONFIG.spreadsheetId) {
+    return;
+  }
+
+  try {
+    const rows = await fetchSheetRows(CONFIG_SHEET_NAME);
+    if (!rows.length) {
+      return;
+    }
+    state.settings = mergeSettings(DEFAULT_SETTINGS, configRowsToSettings(rows));
+    storeSettingsCache(state.settings);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 async function fetchSheetRows(sheetName) {
   if (!APP_CONFIG.spreadsheetId) {
+    if (sheetName === CONFIG_SHEET_NAME) {
+      return [];
+    }
     return readLocalData()[sheetName === "reservas" ? "reservations" : "blocks"];
   }
 
@@ -271,6 +360,14 @@ async function fetchSheetRows(sheetName) {
   }
   const payload = parseGvizResponse(payloadText);
   const rows = payload.table?.rows ?? [];
+  if (sheetName === CONFIG_SHEET_NAME) {
+    return rows
+      .map((row) => ({
+        key: getCellValue(row.c?.[0]),
+        value: getCellValue(row.c?.[1]),
+      }))
+      .filter((row) => row.key);
+  }
   if (sheetName === "reservas") {
     return rows.map((row) => ({
       data: normalizeSheetDate(row.c?.[0]),
@@ -292,6 +389,54 @@ async function fetchSheetRows(sheetName) {
     motivo: getCellValue(row.c?.[3]),
     tipo: getCellValue(row.c?.[4]) || "Manutenção",
   })).filter((row) => row.data && row.quadra && row.horario);
+}
+
+function configRowsToSettings(rows) {
+  const next = {
+    ...DEFAULT_SETTINGS,
+    pricingByCourt: { ...DEFAULT_SETTINGS.pricingByCourt },
+    copy: { ...DEFAULT_SETTINGS.copy },
+  };
+
+  rows.forEach((row) => {
+    const key = String(row.key || "").trim();
+    const value = String(row.value || "").trim();
+    if (!key) {
+      return;
+    }
+
+    if (key === "pixKey" || key === "openingStart" || key === "openingEnd") {
+      next[key] = value || next[key];
+      return;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(next.pricingByCourt, key)) {
+      next.pricingByCourt[key] = value || next.pricingByCourt[key];
+      return;
+    }
+
+    if (key.startsWith("copy.")) {
+      const copyKey = key.slice(5);
+      if (copyKey) {
+        next.copy[copyKey] = value || next.copy[copyKey];
+      }
+    }
+  });
+
+  return next;
+}
+
+function mergeSettings(base, incoming) {
+  return {
+    ...base,
+    ...incoming,
+    pricingByCourt: { ...base.pricingByCourt, ...(incoming.pricingByCourt || {}) },
+    copy: { ...base.copy, ...(incoming.copy || {}) },
+  };
+}
+
+function storeSettingsCache(settings) {
+  localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
 }
 
 function renderSchedule() {
@@ -857,8 +1002,10 @@ async function submitMutation(action, payload, fallbackUpdater) {
   }
 
   const stored = readLocalData();
-  const updated = fallbackUpdater(stored);
-  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+  if (typeof fallbackUpdater === "function") {
+    const updated = fallbackUpdater(stored);
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+  }
 }
 
 function populateSelects() {
@@ -1089,6 +1236,12 @@ function getCurrentHours() {
   return Array.from({ length }, (_, index) => `${String(startHour + index).padStart(2, "0")}:00`);
 }
 
+function formatOpeningHours(startTime, endTime) {
+  const startLabel = String(startTime || "07:00").slice(0, 2);
+  const endLabel = String(endTime || "22:00").slice(0, 2);
+  return `${startLabel}h às ${endLabel}h`;
+}
+
 function readSettings() {
   const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
   if (!raw) {
@@ -1101,6 +1254,7 @@ function readSettings() {
       pricingByCourt: { ...DEFAULT_SETTINGS.pricingByCourt, ...(parsed.pricingByCourt || {}) },
       openingStart: parsed.openingStart || DEFAULT_SETTINGS.openingStart,
       openingEnd: parsed.openingEnd || DEFAULT_SETTINGS.openingEnd,
+      copy: { ...DEFAULT_SETTINGS.copy, ...(parsed.copy || {}) },
     };
   } catch (error) {
     console.error(error);
@@ -1109,14 +1263,91 @@ function readSettings() {
 }
 
 function applySettings() {
+  const copy = state.settings.copy || DEFAULT_SETTINGS.copy;
   if (elements.pixKey) {
     elements.pixKey.textContent = state.settings.pixKey;
   }
-  const heroStrong = document.querySelector(".hero-card strong");
-  if (heroStrong) {
-    heroStrong.textContent = `${state.settings.openingStart.slice(0, 2)}h às ${state.settings.openingEnd.slice(0, 2)}h`;
+  if (elements.quickSlotEyebrow) {
+    elements.quickSlotEyebrow.textContent = copy.quickSlotEyebrow;
+  }
+  if (elements.heroHoursLabel) {
+    elements.heroHoursLabel.textContent = copy.heroHoursLabel;
+  }
+  if (elements.heroHoursDescription) {
+    elements.heroHoursDescription.textContent = copy.heroHoursDescription;
+  }
+  if (elements.scheduleEyebrow) {
+    elements.scheduleEyebrow.textContent = copy.scheduleEyebrow;
+  }
+  if (elements.scheduleTitle) {
+    elements.scheduleTitle.textContent = copy.scheduleTitle;
+  }
+  if (elements.bookingConfirmationEyebrow) {
+    elements.bookingConfirmationEyebrow.textContent = copy.confirmationEyebrow;
+  }
+  if (elements.preBookingEyebrow) {
+    elements.preBookingEyebrow.textContent = copy.preBookingEyebrow;
+  }
+  if (elements.preBookingAmountLabel) {
+    elements.preBookingAmountLabel.textContent = copy.preBookingAmountLabel;
+  }
+  if (elements.preBookingRules) {
+    elements.preBookingRules.textContent = copy.preBookingRules;
+  }
+  if (elements.bookingPaymentTitle) {
+    elements.bookingPaymentTitle.textContent = copy.bookingPaymentTitle;
+  }
+  if (elements.bookingPixTitle) {
+    elements.bookingPixTitle.textContent = copy.bookingPixTitle;
+  }
+  if (elements.bookingPixSubtitle) {
+    elements.bookingPixSubtitle.textContent = copy.bookingPixSubtitle;
+  }
+  if (elements.bookingBillingTitle) {
+    elements.bookingBillingTitle.textContent = copy.bookingBillingTitle;
+  }
+  if (elements.bookingBillingSubtitle) {
+    elements.bookingBillingSubtitle.textContent = copy.billingStatusText || copy.bookingBillingSubtitle;
+  }
+  if (elements.bookingPixLabel) {
+    elements.bookingPixLabel.textContent = copy.bookingPixLabel;
+  }
+  if (elements.bookingPixInstruction) {
+    elements.bookingPixInstruction.textContent = copy.bookingPixInstruction;
+  }
+  if (elements.bookingBillingNotice) {
+    elements.bookingBillingNotice.textContent = copy.bookingBillingNotice;
+  }
+  if (elements.quickSlotBookButton) {
+    elements.quickSlotBookButton.textContent = copy.quickSlotButtonText;
+  }
+  if (elements.continueBookingButton) {
+    elements.continueBookingButton.textContent = copy.continueBookingText;
+  }
+  if (elements.bookingNextButton) {
+    elements.bookingNextButton.textContent = copy.bookingNextText;
+  }
+  if (elements.bookingSubmitButton) {
+    elements.bookingSubmitButton.textContent = copy.bookingSubmitText;
+  }
+  if (elements.bookingReuseButton) {
+    elements.bookingReuseButton.textContent = copy.bookingReuseText;
+  }
+  if (elements.bookingConfirmationClose) {
+    elements.bookingConfirmationClose.textContent = copy.confirmationCloseText;
+  }
+  if (elements.bookingConfirmationRepeat) {
+    elements.bookingConfirmationRepeat.textContent = copy.bookingReuseText;
+  }
+  const openingHours = formatOpeningHours(state.settings.openingStart, state.settings.openingEnd);
+  if (elements.heroHoursTag) {
+    elements.heroHoursTag.textContent = openingHours;
+  }
+  if (elements.heroHoursRange) {
+    elements.heroHoursRange.textContent = openingHours;
   }
   fillSettingsForm();
+  fillConfigForm();
 }
 
 function fillSettingsForm() {
@@ -1130,6 +1361,45 @@ function fillSettingsForm() {
   elements.settingsForm.elements.TN2.value = currencyToNumber(state.settings.pricingByCourt.TN2);
   elements.settingsForm.elements.openingStart.value = state.settings.openingStart;
   elements.settingsForm.elements.openingEnd.value = state.settings.openingEnd;
+}
+
+function fillConfigForm() {
+  if (!elements.configForm) {
+    return;
+  }
+  const copy = state.settings.copy || DEFAULT_SETTINGS.copy;
+  const fields = [
+    "quickSlotEyebrow",
+    "quickSlotLoadingText",
+    "quickSlotEmptyTitle",
+    "quickSlotEmptyMeta",
+    "quickSlotButtonText",
+    "heroHoursLabel",
+    "heroHoursDescription",
+    "scheduleEyebrow",
+    "scheduleTitle",
+    "bookingPixLabel",
+    "bookingPixTitle",
+    "bookingPixSubtitle",
+    "bookingPixInstruction",
+    "bookingBillingTitle",
+    "bookingBillingSubtitle",
+    "bookingBillingNotice",
+    "billingStatusText",
+    "pixWhatsAppMessage",
+    "bookingNextText",
+    "bookingSubmitText",
+    "bookingReuseText",
+    "confirmationEyebrow",
+    "confirmationTitle",
+    "confirmationCloseText",
+  ];
+
+  fields.forEach((field) => {
+    if (elements.configForm.elements[field]) {
+      elements.configForm.elements[field].value = copy[field] || "";
+    }
+  });
 }
 
 function findNextAvailableSlot() {
@@ -1151,16 +1421,27 @@ function renderQuickSlotCTA() {
   if (!elements.quickSlot || !elements.quickSlotTitle || !elements.quickSlotMeta || !elements.quickSlotBookButton) {
     return;
   }
+  const copy = state.settings.copy || DEFAULT_SETTINGS.copy;
   const nextSlot = findNextAvailableSlot();
   if (!nextSlot) {
-    elements.quickSlotTitle.textContent = "Sem horários livres para este dia";
-    elements.quickSlotMeta.textContent = "Troque a data para ver os próximos horários disponíveis.";
+    elements.quickSlotTitle.textContent = copy.quickSlotEmptyTitle;
+    elements.quickSlotMeta.textContent = copy.quickSlotEmptyMeta;
     elements.quickSlotBookButton.disabled = true;
     return;
   }
   elements.quickSlotTitle.textContent = `${nextSlot.court.name} às ${nextSlot.time}`;
   elements.quickSlotMeta.textContent = `Data ${formatDate(state.selectedDate)} • reserve em 1 clique.`;
   elements.quickSlotBookButton.disabled = false;
+}
+
+function showAdminView(viewName) {
+  const isConfig = viewName === "config";
+  elements.operationsView?.classList.toggle("hidden", isConfig);
+  elements.configView?.classList.toggle("hidden", !isConfig);
+  elements.operationsViewButton?.classList.toggle("secondary-button", !isConfig);
+  elements.operationsViewButton?.classList.toggle("ghost-button", isConfig);
+  elements.configViewButton?.classList.toggle("secondary-button", isConfig);
+  elements.configViewButton?.classList.toggle("ghost-button", !isConfig);
 }
 
 function saveLastBookingContact(booking) {
@@ -1196,13 +1477,13 @@ function updatePixWhatsappLink() {
     return;
   }
   const amount = state.settings.pricingByCourt[state.selectedSlot.courtId] ?? "Consulte";
-  const message = [
-    "Olá! Segue comprovante da reserva:",
-    `Quadra: ${state.selectedSlot.courtId}`,
-    `Data: ${formatDate(state.selectedDate)}`,
-    `Horário: ${state.selectedSlot.time}`,
-    `Valor: ${amount}`,
-  ].join("\n");
+  const template = (state.settings.copy || DEFAULT_SETTINGS.copy).pixWhatsAppMessage || DEFAULT_SETTINGS.copy.pixWhatsAppMessage;
+  const normalizedTemplate = String(template).replace(/\\n/g, "\n");
+  const message = normalizedTemplate
+    .replace(/\{court\}/g, state.selectedSlot.courtId)
+    .replace(/\{date\}/g, formatDate(state.selectedDate))
+    .replace(/\{time\}/g, state.selectedSlot.time)
+    .replace(/\{amount\}/g, amount);
   elements.pixWhatsappLink.href = `https://wa.me/?text=${encodeURIComponent(message)}`;
 }
 
@@ -1210,11 +1491,15 @@ function showBookingConfirmation(booking) {
   if (!elements.bookingConfirmation) {
     return;
   }
+  const copy = state.settings.copy || DEFAULT_SETTINGS.copy;
   const statusText = booking.status === "faturado" ? "Solicitação em faturamento" : "Solicitação enviada (pendente de confirmação)";
   const nextStep = booking.status === "faturado"
     ? "Próximo passo: compareça no horário reservado e aproveite sua quadra."
     : "Próximo passo: envie o comprovante no WhatsApp para confirmar mais rápido.";
-  elements.bookingConfirmationTitle.textContent = `${booking.quadra} • ${booking.horario} • ${formatDate(booking.data)}`;
+  if (elements.bookingConfirmationEyebrow) {
+    elements.bookingConfirmationEyebrow.textContent = copy.confirmationEyebrow;
+  }
+  elements.bookingConfirmationTitle.textContent = `${copy.confirmationTitle} • ${booking.quadra} • ${booking.horario} • ${formatDate(booking.data)}`;
   elements.bookingConfirmationMeta.textContent = `Status: ${statusText}`;
   elements.bookingConfirmationNextStep.textContent = nextStep;
   elements.bookingConfirmation.classList.remove("hidden");
@@ -1259,12 +1544,69 @@ async function saveSettings(form) {
     },
     openingStart,
     openingEnd,
+    copy: { ...state.settings.copy },
   };
-  localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(state.settings));
-  applySettings();
-  populateSelects();
-  await loadAgenda();
-  updateBanner("Configurações salvas e aplicadas com sucesso.");
+  try {
+    await submitMutation("config:update", { settings: state.settings }, () => null);
+    storeSettingsCache(state.settings);
+    await loadSettingsFromSheet();
+    applySettings();
+    populateSelects();
+    await loadAgenda();
+    updateBanner("Configurações salvas e aplicadas com sucesso.");
+  } catch (error) {
+    console.error(error);
+    updateFriendlyError(error, "Nao foi possivel salvar as configuracoes.");
+  }
+}
+
+async function saveCopySettings(form) {
+  const formData = new FormData(form);
+  const copy = {
+    ...state.settings.copy,
+    quickSlotEyebrow: String(formData.get("quickSlotEyebrow") || "").trim() || DEFAULT_SETTINGS.copy.quickSlotEyebrow,
+    quickSlotLoadingText: String(formData.get("quickSlotLoadingText") || "").trim() || DEFAULT_SETTINGS.copy.quickSlotLoadingText,
+    quickSlotEmptyTitle: String(formData.get("quickSlotEmptyTitle") || "").trim() || DEFAULT_SETTINGS.copy.quickSlotEmptyTitle,
+    quickSlotEmptyMeta: String(formData.get("quickSlotEmptyMeta") || "").trim() || DEFAULT_SETTINGS.copy.quickSlotEmptyMeta,
+    quickSlotButtonText: String(formData.get("quickSlotButtonText") || "").trim() || DEFAULT_SETTINGS.copy.quickSlotButtonText,
+    heroHoursLabel: String(formData.get("heroHoursLabel") || "").trim() || DEFAULT_SETTINGS.copy.heroHoursLabel,
+    heroHoursDescription: String(formData.get("heroHoursDescription") || "").trim() || DEFAULT_SETTINGS.copy.heroHoursDescription,
+    scheduleEyebrow: String(formData.get("scheduleEyebrow") || "").trim() || DEFAULT_SETTINGS.copy.scheduleEyebrow,
+    scheduleTitle: String(formData.get("scheduleTitle") || "").trim() || DEFAULT_SETTINGS.copy.scheduleTitle,
+    bookingPixLabel: String(formData.get("bookingPixLabel") || "").trim() || DEFAULT_SETTINGS.copy.bookingPixLabel,
+    bookingPixTitle: String(formData.get("bookingPixTitle") || "").trim() || DEFAULT_SETTINGS.copy.bookingPixTitle,
+    bookingPixSubtitle: String(formData.get("bookingPixSubtitle") || "").trim() || DEFAULT_SETTINGS.copy.bookingPixSubtitle,
+    bookingPixInstruction: String(formData.get("bookingPixInstruction") || "").trim() || DEFAULT_SETTINGS.copy.bookingPixInstruction,
+    bookingBillingTitle: String(formData.get("bookingBillingTitle") || "").trim() || DEFAULT_SETTINGS.copy.bookingBillingTitle,
+    bookingBillingSubtitle: String(formData.get("bookingBillingSubtitle") || "").trim() || DEFAULT_SETTINGS.copy.bookingBillingSubtitle,
+    bookingBillingNotice: String(formData.get("bookingBillingNotice") || "").trim() || DEFAULT_SETTINGS.copy.bookingBillingNotice,
+    billingStatusText: String(formData.get("billingStatusText") || "").trim() || DEFAULT_SETTINGS.copy.billingStatusText,
+    pixWhatsAppMessage: String(formData.get("pixWhatsAppMessage") || "").trim() || DEFAULT_SETTINGS.copy.pixWhatsAppMessage,
+    bookingNextText: String(formData.get("bookingNextText") || "").trim() || DEFAULT_SETTINGS.copy.bookingNextText,
+    bookingSubmitText: String(formData.get("bookingSubmitText") || "").trim() || DEFAULT_SETTINGS.copy.bookingSubmitText,
+    bookingReuseText: String(formData.get("bookingReuseText") || "").trim() || DEFAULT_SETTINGS.copy.bookingReuseText,
+    confirmationEyebrow: String(formData.get("confirmationEyebrow") || "").trim() || DEFAULT_SETTINGS.copy.confirmationEyebrow,
+    confirmationTitle: String(formData.get("confirmationTitle") || "").trim() || DEFAULT_SETTINGS.copy.confirmationTitle,
+    confirmationCloseText: String(formData.get("confirmationCloseText") || "").trim() || DEFAULT_SETTINGS.copy.confirmationCloseText,
+  };
+
+  state.settings = {
+    ...state.settings,
+    copy,
+  };
+
+  try {
+    await submitMutation("config:update", { settings: state.settings }, () => null);
+    storeSettingsCache(state.settings);
+    await loadSettingsFromSheet();
+    applySettings();
+    updateConfigStatus("Textos salvos e aplicados com sucesso.");
+    updateBanner("Textos do app salvos com sucesso.");
+  } catch (error) {
+    console.error(error);
+    updateConfigStatus("Nao foi possivel salvar os textos agora.");
+    updateFriendlyError(error, "Nao foi possivel salvar os textos.");
+  }
 }
 
 function numberToCurrency(raw) {
@@ -1294,6 +1636,15 @@ function updateAdminRouteUI() {
   if (elements.adminLogin) {
     elements.adminLogin.classList.toggle("hidden", isAuthenticated);
     elements.adminLogin.setAttribute("aria-hidden", String(isAuthenticated));
+  }
+  if (isAuthenticated) {
+    showAdminView("operations");
+  }
+}
+
+function updateConfigStatus(message) {
+  if (elements.configStatus) {
+    elements.configStatus.textContent = message;
   }
 }
 

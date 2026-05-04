@@ -1,0 +1,30 @@
+chave,valor
+pixKey,pix@quadras.com
+openingStart,07:00
+openingEnd,22:00
+BT1,"R$ 80,00"
+BT2,"R$ 80,00"
+TN1,"R$ 100,00"
+TN2,"R$ 100,00"
+copy.quickSlotEyebrow,Próximo horário livre
+copy.quickSlotLoadingText,Buscando o melhor horário para você...
+copy.quickSlotEmptyTitle,Sem horários livres para este dia
+copy.quickSlotEmptyMeta,Troque a data para ver os próximos horários disponíveis.
+copy.quickSlotButtonText,Reservar este horário
+copy.heroHoursLabel,Horário de funcionamento
+copy.heroHoursDescription,"Blocos de 1 hora para Beach Tennis e Tênis."
+copy.scheduleEyebrow,Grade visual
+copy.scheduleTitle,Agenda por quadra e horário
+copy.preBookingAmountLabel,Valor da hora
+copy.preBookingRules,"Ao confirmar, você concorda com as regras de uso da quadra. Cancelamentos devem ser feitos com 2h de antecedência."
+copy.bookingPixLabel,Pagamento via PIX
+copy.bookingPixInstruction,Envie o comprovante pelo WhatsApp.
+copy.pixWhatsAppMessage,"Olá! Segue comprovante da reserva:\nQuadra: {court}\nData: {date}\nHorário: {time}\nValor: {amount}"
+copy.bookingBillingNotice,"Valor será lançado na sua conta. Pagamento no final do mês."
+copy.billingStatusText,Pagamento no final do mês.
+copy.bookingNextText,Escolher pagamento
+copy.bookingSubmitText,Enviar solicitação
+copy.bookingReuseText,Reservar novamente
+copy.confirmationEyebrow,Solicitação enviada
+copy.confirmationTitle,Resumo da sua reserva
+copy.confirmationCloseText,Fechar

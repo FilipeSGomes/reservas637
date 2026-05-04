@@ -34,7 +34,7 @@
           </p>
           <div class="hero-tags" aria-label="Destaques da 637 Cervejaria">
             <span>Reserva rápida</span>
-            <span>07h às 22h</span>
+            <span id="hero-hours-tag">07h às 22h</span>
           </div>
           <div class="hero-actions">
             <a class="primary-button hero-cta-button" href="#schedule-grid">Reservar quadra</a>
@@ -49,9 +49,9 @@
             />
           </figure>
           <div class="hero-card">
-            <p class="hero-card-label">Horário de funcionamento</p>
-            <strong>07h às 22h</strong>
-            <p>Blocos de 1 hora para Beach Tennis e Tênis.</p>
+            <p class="hero-card-label" id="hero-hours-label">Horário de funcionamento</p>
+            <strong id="hero-hours-range">07h às 22h</strong>
+            <p id="hero-hours-description">Blocos de 1 hora para Beach Tennis e Tênis.</p>
           </div>
         </div>
       </header>
@@ -74,7 +74,7 @@
         <section class="status-banner" id="status-banner"></section>
         <section class="quick-slot" id="quick-slot" aria-live="polite">
           <div>
-            <p class="eyebrow">Próximo Horário Livre</p>
+            <p class="eyebrow" id="quick-slot-eyebrow">Próximo horário livre</p>
             <h3 id="quick-slot-title">Buscando o melhor horário para você...</h3>
             <p id="quick-slot-meta" class="fine-print"></p>
             <div class="quick-slot-skeleton" aria-hidden="true"></div>
@@ -86,7 +86,7 @@
 
         <section id="booking-confirmation" class="booking-confirmation hidden" aria-live="polite">
           <div>
-            <p class="eyebrow">Solicitação enviada</p>
+            <p class="eyebrow" id="booking-confirmation-eyebrow">Solicitação enviada</p>
             <h3 id="booking-confirmation-title">Resumo da sua reserva</h3>
             <p id="booking-confirmation-meta" class="fine-print"></p>
             <p id="booking-confirmation-next-step" class="fine-print"></p>
@@ -100,8 +100,8 @@
         <section class="schedule-section">
           <div class="section-heading">
             <div>
-              <p class="eyebrow">Grade visual</p>
-              <h2>Agenda por quadra e horário</h2>
+              <p class="eyebrow" id="schedule-eyebrow">Grade visual</p>
+              <h2 id="schedule-title">Agenda por quadra e horário</h2>
             </div>
             <button id="refresh-button" class="secondary-button" type="button">
               Atualizar agenda
@@ -114,10 +114,10 @@
     </div>
 
     <dialog id="pre-booking-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="pre-booking-title">
-      <div class="modal-card">
+        <div class="modal-card">
         <div class="modal-header">
           <div>
-            <p class="eyebrow">Pré-reserva</p>
+            <p class="eyebrow" id="pre-booking-eyebrow">Pré-reserva</p>
             <h3 id="pre-booking-title">Horário selecionado</h3>
           </div>
           <button id="close-pre-booking-button" class="icon-button" type="button" aria-label="Fechar pré-reserva">
@@ -126,9 +126,9 @@
         </div>
 
         <div class="reservation-alert">
-          <p class="reservation-alert-label">Valor da hora</p>
+          <p class="reservation-alert-label" id="pre-booking-amount-label">Valor da hora</p>
           <strong id="pre-booking-amount">R$ 80,00</strong>
-          <p>
+          <p id="pre-booking-rules">
             Ao confirmar, você concorda com as regras de uso da quadra.
             Cancelamentos devem ser feitos com 2h de antecedência.
           </p>
@@ -203,36 +203,36 @@
         </div>
 
         <div id="booking-payment-step" class="booking-step hidden">
-          <p class="step-title">Forma de pagamento</p>
+          <p class="step-title" id="booking-payment-title">Forma de pagamento</p>
           <div class="payment-options">
             <label class="payment-option">
               <input type="radio" name="payment" value="pix" checked />
               <span>
-                <strong>PIX</strong>
-                <small>Status pendente até confirmação do admin.</small>
+                <strong id="booking-pix-title">PIX</strong>
+                <small id="booking-pix-subtitle">Status pendente até confirmação do admin.</small>
               </span>
             </label>
             <label class="payment-option">
               <input type="radio" name="payment" value="faturamento" />
               <span>
-                <strong>Faturamento</strong>
-                <small>Pagamento no final do mês.</small>
+                <strong id="booking-billing-title">Faturamento</strong>
+                <small id="booking-billing-subtitle">Pagamento no final do mês.</small>
               </span>
             </label>
           </div>
 
           <div id="pix-payment-box" class="pix-box">
-            <p class="pix-label">Pagamento via PIX</p>
+            <p class="pix-label" id="booking-pix-label">Pagamento via PIX</p>
             <strong id="pix-key">pix@quadras.com</strong>
             <span id="pix-amount">R$ 80,00</span>
-            <p class="payment-instruction">Envie o comprovante pelo WhatsApp.</p>
+            <p class="payment-instruction" id="booking-pix-instruction">Envie o comprovante pelo WhatsApp.</p>
             <a id="pix-whatsapp-link" class="ghost-button" target="_blank" rel="noopener noreferrer" href="#">
               Enviar comprovante pelo WhatsApp
             </a>
           </div>
 
           <div id="billing-payment-box" class="billing-box hidden">
-            <p>
+            <p id="booking-billing-notice">
               Valor será lançado na sua conta. Pagamento no final do mês.
             </p>
           </div>
