@@ -213,6 +213,16 @@ function updateConfig_(spreadsheet, payload) {
     TN2: String((settings.pricingByCourt && settings.pricingByCourt.TN2) || settings.TN2 || existingEntries.TN2 || "").trim(),
   };
 
+  var incomingCopy = settings.copy || {};
+  if (incomingCopy && typeof incomingCopy === "object") {
+    Object.keys(incomingCopy).forEach(function (key) {
+      if (!key) {
+        return;
+      }
+      merged["copy." + key] = String(incomingCopy[key] || "").trim();
+    });
+  }
+
   var knownKeys = {
     pixKey: true,
     whatsappPhoneNumber: true,

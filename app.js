@@ -75,6 +75,16 @@ const DEFAULT_SETTINGS = {
   copy: { ...DEFAULT_COPY },
 };
 
+function derivePricingByCourtFromPricingConfig(pricingConfig) {
+  const config = normalizePricingConfig(pricingConfig || getDefaultPricingConfig());
+  return {
+    BT1: formatCurrencyBRL(config.beachTennis.dayPrice),
+    BT2: formatCurrencyBRL(config.beachTennis.dayPrice),
+    TN1: formatCurrencyBRL(config.tennis.dayPrice),
+    TN2: formatCurrencyBRL(config.tennis.dayPrice),
+  };
+}
+
 let loadingOverlayCounter = 0;
 let loadingOverlayTimeoutId = null;
 let lastModalTrigger = null;
@@ -800,7 +810,9 @@ function updatePaymentView() {
   elements.billingPaymentBox.classList.toggle("hidden", payment !== "faturamento");
   if (elements.bookingBillingNotice) {
     const pricing = getSelectedSlotPricing();
-    elements.bookingBillingNotice.textContent = `Valor de ${pricing.priceText} será lançado na sua conta. Pagamento no final do mês.`;
+    const copy = state.settings.copy || DEFAULT_SETTINGS.copy;
+    const billingTemplate = String(copy.bookingBillingNotice || DEFAULT_SETTINGS.copy.bookingBillingNotice);
+    elements.bookingBillingNotice.textContent = billingTemplate.replace(/\{amount\}/g, pricing.priceText);
   }
   updatePixWhatsappLink();
 }
@@ -1485,7 +1497,7 @@ function applySettings() {
     elements.bookingBillingTitle.textContent = copy.bookingBillingTitle;
   }
   if (elements.bookingBillingSubtitle) {
-    elements.bookingBillingSubtitle.textContent = copy.billingStatusText || copy.bookingBillingSubtitle;
+    elements.bookingBillingSubtitle.textContent = copy.bookingBillingSubtitle;
   }
   if (elements.bookingPixLabel) {
     elements.bookingPixLabel.textContent = copy.bookingPixLabel;
@@ -1561,12 +1573,13 @@ function fillSettingsForm() {
   if (!elements.settingsForm) {
     return;
   }
+  const pricingByCourtInfo = derivePricingByCourtFromPricingConfig(state.settings.pricingConfig);
   elements.settingsForm.elements.pixKey.value = state.settings.pixKey;
   elements.settingsForm.elements.whatsappPhoneNumber.value = state.settings.whatsappPhoneNumber;
-  elements.settingsForm.elements.BT1.value = currencyToNumber(state.settings.pricingByCourt.BT1);
-  elements.settingsForm.elements.BT2.value = currencyToNumber(state.settings.pricingByCourt.BT2);
-  elements.settingsForm.elements.TN1.value = currencyToNumber(state.settings.pricingByCourt.TN1);
-  elements.settingsForm.elements.TN2.value = currencyToNumber(state.settings.pricingByCourt.TN2);
+  elements.settingsForm.elements.BT1.value = currencyToNumber(pricingByCourtInfo.BT1);
+  elements.settingsForm.elements.BT2.value = currencyToNumber(pricingByCourtInfo.BT2);
+  elements.settingsForm.elements.TN1.value = currencyToNumber(pricingByCourtInfo.TN1);
+  elements.settingsForm.elements.TN2.value = currencyToNumber(pricingByCourtInfo.TN2);
   elements.settingsForm.elements.openingStart.value = state.settings.openingStart;
   elements.settingsForm.elements.openingEnd.value = state.settings.openingEnd;
 }
@@ -1683,6 +1696,7 @@ async function savePricingConfig(form) {
       ...normalized,
       updatedAt: new Date().toISOString(),
     },
+    pricingByCourt: derivePricingByCourtFromPricingConfig(normalized),
   };
 
   setFormDisabled(form, true);
@@ -2035,7 +2049,7 @@ function showBookingConfirmation(booking) {
   }
   const copy = state.settings.copy || DEFAULT_SETTINGS.copy;
   const statusText = booking.status === "faturado"
-    ? "Solicitação em faturamento"
+    ? copy.billingStatusText
     : "Solicitação enviada (pendente de confirmação)";
   const nextStep = booking.status === "faturado"
     ? "Próximo passo: compareça no horário reservado e aproveite sua quadra."
@@ -2083,12 +2097,7 @@ async function saveSettings(form) {
     whatsappPhoneNumber:
       normalizeWhatsAppPhoneStorage(formData.get("whatsappPhoneNumber")) || DEFAULT_SETTINGS.whatsappPhoneNumber,
     pricingConfig: { ...state.settings.pricingConfig },
-    pricingByCourt: {
-      BT1: numberToCurrency(String(formData.get("BT1") || "0")),
-      BT2: numberToCurrency(String(formData.get("BT2") || "0")),
-      TN1: numberToCurrency(String(formData.get("TN1") || "0")),
-      TN2: numberToCurrency(String(formData.get("TN2") || "0")),
-    },
+    pricingByCourt: derivePricingByCourtFromPricingConfig(state.settings.pricingConfig),
     openingStart,
     openingEnd,
     copy: { ...state.settings.copy },
@@ -2157,10 +2166,6 @@ async function saveCopySettings(form) {
     updateConfigStatus("Nao foi possivel salvar os textos agora.");
     updateFriendlyError(error, "Nao foi possivel salvar os textos.");
   }
-}
-
-function numberToCurrency(raw) {
-  return formatCurrencyBRL(raw);
 }
 
 function currencyToNumber(value) {

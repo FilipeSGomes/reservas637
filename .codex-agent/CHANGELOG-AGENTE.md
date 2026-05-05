@@ -104,3 +104,44 @@
 - **Mudança aplicada**: frontend impede seleção/envio de reserva em data passada; Apps Script versionado recusa `reservation:create` em data passada; cache PWA incrementado para `app-637-v3`.
 - **Verificações executadas**: `node --check app.js`; `node --check sw.js`; `node --check` do conteúdo de `google-sheets-template/apps-script.gs` copiado temporariamente para `/tmp/apps-script-check.js`.
 - **Pendências**: publicar Apps Script atualizado em produção; testar fluxo completo reserva -> Sheets -> admin; validar atualização de service worker em cliente instalado.
+
+---
+
+## 2026-05-05 — Prompt 00: Descoberta inicial incremental
+
+- **Modo**: leitura para código/runtime; escrita apenas em `.codex-agent/`.
+- **Ação**: análise incremental baseada em `PROJECT-SCAN.md` + amostragem dirigida de entrypoints, integração Sheets/Apps Script, PWA e docs.
+- **Arquivos lidos**: contexto obrigatório, `index.html`, `admin/index.html`, `instalar.html`, `app.js`, `styles.css`, `sw.js`, `manifest.webmanifest`, `README.md`, `google-sheets-template/*`.
+- **Achados principais**: stack estática confirmada, ausência de CI/testes confirmada, presença de dados sensíveis/segredos hardcoded confirmada (sem registrar valores), módulo de configuração (`config:update`) ativo, cache PWA atual em `app-637-v4`.
+- **Memória atualizada**: `README-PROJETO.md`, `MAPA-MENTAL.md`, `RISCOS.md`, `GAPS.md`, `DECISOES.md`, `PADROES.md`, `SCORECARD.md`, `index/MODULES.md` e novos prompts incrementais.
+- **Código-fonte alterado**: não.
+
+---
+
+## 2026-05-05 — Scan de configuração do admin (não refletindo)
+
+- **Modo**: leitura de código + escrita em `.codex-agent/`.
+- **Ação**: varredura ponta a ponta do fluxo de configuração (formulários admin -> webhook `config:update` -> leitura/aplicação em runtime).
+- **Diagnóstico confirmado**:
+  1. `settings.copy` é enviado pelo frontend, mas não é persistido corretamente no Apps Script.
+  2. Existe duplicidade de fonte de preço (`pricingByCourt` vs `pricingConfig`) e o motor usa `pricingConfig`.
+- **Entrega**: contrato criado em `.codex-agent/contracts/002-correcao-config-admin-nao-reflete.md`.
+- **Código-fonte alterado**: não.
+
+## 2026-05-05 — Implementação do Contrato 002 (config admin refletindo)
+
+- **Aprovação**: usuário aprovou execução no chat.
+- **Arquivos alterados**: `app.js`, `google-sheets-template/apps-script.gs`, `.codex-agent/contracts/002-correcao-config-admin-nao-reflete.md`, `.codex-agent/CHANGELOG-AGENTE.md`.
+- **Correções aplicadas**:
+  1. `config:update` agora persiste chaves `copy.*` recebidas em `settings.copy`.
+  2. `updatePaymentView()` passou a usar `copy.bookingBillingNotice` (com suporte a placeholder `{amount}`) em vez de texto hardcoded.
+  3. `applySettings()` agora aplica `bookingBillingSubtitle` diretamente.
+  4. `showBookingConfirmation()` usa `copy.billingStatusText` no status de faturamento.
+- **Validação técnica**: `node --check app.js` aprovado; sintaxe do Apps Script validada via cópia temporária `.js`.
+- **Pendência residual**: coexistência de `pricingByCourt` e `pricingConfig` permanece para decisão de produto/UX em próximo contrato.
+
+## 2026-05-05 — Implementação do Contrato 003 (unificação de preço)
+
+- **Aprovação**: derivada da solicitação explícita do usuário para resolver a pendência residual.
+- **Arquivos alterados**: `app.js`, `admin/index.html`, `.codex-agent/contracts/003-unificacao-fonte-preco-admin.md`, `.codex-agent/DECISOES.md`, `.codex-agent/CHANGELOG-AGENTE.md`.
+- **Resultado**: eliminada ambiguidade de edição de preços no admin; `pricingConfig` é a fonte oficial e `pricingByCourt` tornou-se representação derivada/informativa.
