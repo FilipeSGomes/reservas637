@@ -1,16 +1,14 @@
 chave,valor
-pixKey,pix@quadras.com
+pixKey,
 whatsappPhoneNumber,5511944554650
 openingStart,07:00
 openingEnd,22:00
-pricing.dayPrice,80
-pricing.nightPrice,100
+pricing.beachTennis.dayPrice,80
+pricing.beachTennis.nightPrice,80
+pricing.tennis.dayPrice,100
+pricing.tennis.nightPrice,100
 pricing.nightStartsAt,18:00
 pricing.updatedAt,2026-05-04T00:00:00.000Z
-BT1,"R$ 80,00"
-BT2,"R$ 80,00"
-TN1,"R$ 100,00"
-TN2,"R$ 100,00"
 copy.quickSlotEyebrow,Próximo horário livre
 copy.quickSlotLoadingText,Buscando o melhor horário para você...
 copy.quickSlotEmptyTitle,Sem horários livres para este dia

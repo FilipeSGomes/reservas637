@@ -152,12 +152,13 @@
               <article class="admin-card">
                 <h3>Configuração de valores</h3>
                 <p class="fine-print">
-                  Defina o valor da hora no período diurno e noturno. O sistema usa o horário de início do
-                  noturno para calcular automaticamente o valor da reserva.
+                  Defina o valor da hora por tipo de quadra e período. Beach Tennis e Tênis podem ter preços
+                  diferentes. O sistema usa o horário de início do noturno para calcular automaticamente o
+                  valor da reserva.
                 </p>
                 <form id="pricing-form" class="stack-form">
                   <div class="config-group">
-                    <p class="config-group-title">Preço por período</p>
+                    <p class="config-group-title">Beach Tennis (BT1 e BT2)</p>
                     <label class="field">
                       <span>Valor diurno</span>
                       <input name="dayPrice" type="text" inputmode="decimal" placeholder="80,00" required />
@@ -169,6 +170,17 @@
                     <label class="field">
                       <span>Início do período noturno</span>
                       <input name="nightStartsAt" type="time" required />
+                    </label>
+                  </div>
+                  <div class="config-group">
+                    <p class="config-group-title">Tênis (TN1 e TN2)</p>
+                    <label class="field">
+                      <span>Valor diurno</span>
+                      <input name="tennisDayPrice" type="text" inputmode="decimal" placeholder="100,00" required />
+                    </label>
+                    <label class="field">
+                      <span>Valor noturno</span>
+                      <input name="tennisNightPrice" type="text" inputmode="decimal" placeholder="120,00" required />
                     </label>
                   </div>
                   <button id="pricing-save-button" class="primary-button" type="submit">Salvar configuração</button>

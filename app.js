@@ -15,6 +15,10 @@ const COURTS = [
   { id: "TN2", name: "Tênis 2", type: "Tênis" },
 ];
 
+function getCourtById(courtId) {
+  return COURTS.find((court) => court.id === courtId) || null;
+}
+
 const LOCAL_STORAGE_KEY = "quadras-local-fallback";
 const SETTINGS_STORAGE_KEY = "quadras-admin-settings";
 const FULL_DAY_BLOCK_SENTINEL = "__FULL_DAY__";
@@ -57,7 +61,7 @@ const DEFAULT_COPY = {
 };
 
 const DEFAULT_SETTINGS = {
-  pixKey: "pix@quadras.com",
+  pixKey: "",
   whatsappPhoneNumber: "5511944554650",
   pricingConfig: getDefaultPricingConfig(),
   pricingByCourt: {
@@ -121,7 +125,6 @@ const elements = {
   preBookingAmountLabel: document.querySelector("#pre-booking-amount-label"),
   preBookingRules: document.querySelector("#pre-booking-rules"),
   preBookingAmount: document.querySelector("#pre-booking-amount"),
-  preBookingPeriod: document.querySelector("#pre-booking-period"),
   closePreBookingButton: document.querySelector("#close-pre-booking-button"),
   cancelPreBookingButton: document.querySelector("#cancel-pre-booking-button"),
   continueBookingButton: document.querySelector("#continue-booking-button"),
@@ -135,7 +138,6 @@ const elements = {
   bookingSubmitButton: document.querySelector("#booking-submit-button"),
   bookingReuseButton: document.querySelector("#booking-reuse-button"),
   bookingSummaryTime: document.querySelector("#booking-summary-time"),
-  bookingSummaryPeriod: document.querySelector("#booking-summary-period"),
   bookingSummaryPrice: document.querySelector("#booking-summary-price"),
   pixPaymentBox: document.querySelector("#pix-payment-box"),
   pixWhatsappLink: document.querySelector("#pix-whatsapp-link"),
@@ -148,8 +150,9 @@ const elements = {
   bookingBillingNotice: document.querySelector("#booking-billing-notice"),
   billingPaymentBox: document.querySelector("#billing-payment-box"),
   pixKey: document.querySelector("#pix-key"),
+  pixKeyCopyButton: document.querySelector("#pix-key-copy"),
   pixAmount: document.querySelector("#pix-amount"),
-  pixPeriod: document.querySelector("#pix-period"),
+  pixCopyFeedback: document.querySelector("#pix-copy-feedback"),
   closeModalButton: document.querySelector("#close-modal-button"),
   cancelBookingButton: document.querySelector("#cancel-booking-button"),
   adminAccessButton: document.querySelector("#admin-access-button"),
@@ -275,13 +278,17 @@ function attachEvents() {
     event.preventDefault();
     await savePricingConfig(event.currentTarget);
   });
-  elements.pricingForm?.querySelectorAll('input[name="dayPrice"], input[name="nightPrice"], input[name="nightStartsAt"]')?.forEach((input) => {
-    input.addEventListener("input", () => {
-      clearPricingStatus();
-      updatePricingFormState();
+  elements.pricingForm
+    ?.querySelectorAll(
+      'input[name="dayPrice"], input[name="nightPrice"], input[name="nightStartsAt"], input[name="tennisDayPrice"], input[name="tennisNightPrice"]'
+    )
+    ?.forEach((input) => {
+      input.addEventListener("input", () => {
+        clearPricingStatus();
+        updatePricingFormState();
+      });
+      input.addEventListener("change", updatePricingFormState);
     });
-    input.addEventListener("change", updatePricingFormState);
-  });
   elements.settingsForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
     await saveSettings(event.currentTarget);
@@ -292,6 +299,7 @@ function attachEvents() {
   });
   elements.operationsViewButton?.addEventListener("click", () => showAdminView("operations"));
   elements.configViewButton?.addEventListener("click", () => showAdminView("config"));
+  elements.pixKeyCopyButton?.addEventListener("click", copyPixKeyToClipboard);
 }
 
 async function loadAgenda() {
@@ -425,9 +433,15 @@ async function fetchSheetRows(sheetName) {
 function configRowsToSettings(rows) {
   const next = {
     ...DEFAULT_SETTINGS,
-    pricingConfig: { ...DEFAULT_SETTINGS.pricingConfig },
+    pricingConfig: normalizePricingConfig(DEFAULT_SETTINGS.pricingConfig),
     pricingByCourt: { ...DEFAULT_SETTINGS.pricingByCourt },
     copy: { ...DEFAULT_SETTINGS.copy },
+  };
+  const seenPricing = {
+    beachDay: false,
+    beachNight: false,
+    tennisDay: false,
+    tennisNight: false,
   };
 
   rows.forEach((row) => {
@@ -447,13 +461,45 @@ function configRowsToSettings(rows) {
       return;
     }
 
-    if (key === "pricing.dayPrice" || key === "dayPrice") {
-      next.pricingConfig.dayPrice = parseCurrencyInput(value, next.pricingConfig.dayPrice);
+    if (key === "pricing.beachTennis.dayPrice") {
+      next.pricingConfig.beachTennis.dayPrice = parseCurrencyInput(value, next.pricingConfig.beachTennis.dayPrice);
+      seenPricing.beachDay = true;
       return;
     }
 
-    if (key === "pricing.nightPrice" || key === "nightPrice") {
-      next.pricingConfig.nightPrice = parseCurrencyInput(value, next.pricingConfig.nightPrice);
+    if (
+      (key === "pricing.dayPrice" || key === "dayPrice" || key === "BT1" || key === "BT2") &&
+      !seenPricing.beachDay
+    ) {
+      next.pricingConfig.beachTennis.dayPrice = parseCurrencyInput(value, next.pricingConfig.beachTennis.dayPrice);
+      return;
+    }
+
+    if (key === "pricing.beachTennis.nightPrice") {
+      next.pricingConfig.beachTennis.nightPrice = parseCurrencyInput(value, next.pricingConfig.beachTennis.nightPrice);
+      seenPricing.beachNight = true;
+      return;
+    }
+
+    if ((key === "pricing.nightPrice" || key === "nightPrice") && !seenPricing.beachNight) {
+      next.pricingConfig.beachTennis.nightPrice = parseCurrencyInput(value, next.pricingConfig.beachTennis.nightPrice);
+      return;
+    }
+
+    if (key === "pricing.tennis.dayPrice") {
+      next.pricingConfig.tennis.dayPrice = parseCurrencyInput(value, next.pricingConfig.tennis.dayPrice);
+      seenPricing.tennisDay = true;
+      return;
+    }
+
+    if ((key === "TN1" || key === "TN2") && !seenPricing.tennisDay) {
+      next.pricingConfig.tennis.dayPrice = parseCurrencyInput(value, next.pricingConfig.tennis.dayPrice);
+      return;
+    }
+
+    if (key === "pricing.tennis.nightPrice") {
+      next.pricingConfig.tennis.nightPrice = parseCurrencyInput(value, next.pricingConfig.tennis.nightPrice);
+      seenPricing.tennisNight = true;
       return;
     }
 
@@ -613,6 +659,7 @@ function renderSchedule() {
 }
 
 function getSlotState(courtId, time) {
+  const court = getCourtById(courtId);
   const block = state.blocks.find((entry) => entry.quadra === courtId && entry.horario === time);
   if (block) {
     return {
@@ -629,7 +676,7 @@ function getSlotState(courtId, time) {
   }
 
   const reservation = findReservationForSlot(courtId, time);
-  const pricing = resolveSlotPricing(time, state.settings.pricingConfig);
+  const pricing = resolveSlotPricing(time, court?.type, state.settings.pricingConfig);
   const reservationPriceText = reservation?.price ? formatCurrencyBRL(reservation.price) : "";
 
   if (!reservation) {
@@ -685,8 +732,9 @@ function openPreBookingModal(court, time) {
   state.selectedSlot = {
     courtId: court.id,
     courtName: court.name,
+    courtType: court.type,
     time,
-    pricing: resolveSlotPricing(time, state.settings.pricingConfig),
+    pricing: resolveSlotPricing(time, court.type, state.settings.pricingConfig),
   };
   renderSchedule();
   elements.preBookingTitle.textContent = `${court.name} • ${formatDate(state.selectedDate)} • ${time}`;
@@ -1491,14 +1539,8 @@ function syncBookingUiFromSettings() {
   if (elements.preBookingAmount) {
     elements.preBookingAmount.textContent = pricing.priceText;
   }
-  if (elements.preBookingPeriod) {
-    elements.preBookingPeriod.textContent = `Período ${formatPeriodLabel(pricing.period)}`;
-  }
   if (elements.bookingSummaryTime) {
     elements.bookingSummaryTime.textContent = state.selectedSlot.time;
-  }
-  if (elements.bookingSummaryPeriod) {
-    elements.bookingSummaryPeriod.textContent = formatPeriodLabel(pricing.period);
   }
   if (elements.bookingSummaryPrice) {
     elements.bookingSummaryPrice.textContent = pricing.priceText;
@@ -1509,8 +1551,8 @@ function syncBookingUiFromSettings() {
   if (elements.pixAmount) {
     elements.pixAmount.textContent = pricing.priceText;
   }
-  if (elements.pixPeriod) {
-    elements.pixPeriod.textContent = `Período ${formatPeriodLabel(pricing.period)}`;
+  if (elements.pixCopyFeedback) {
+    elements.pixCopyFeedback.textContent = "";
   }
   updatePaymentView();
 }
@@ -1536,10 +1578,16 @@ function fillPricingForm() {
 
   const pricing = loadPricingConfig();
   if (elements.pricingForm.elements.dayPrice) {
-    elements.pricingForm.elements.dayPrice.value = formatPriceInput(pricing.dayPrice);
+    elements.pricingForm.elements.dayPrice.value = formatPriceInput(pricing.beachTennis.dayPrice);
   }
   if (elements.pricingForm.elements.nightPrice) {
-    elements.pricingForm.elements.nightPrice.value = formatPriceInput(pricing.nightPrice);
+    elements.pricingForm.elements.nightPrice.value = formatPriceInput(pricing.beachTennis.nightPrice);
+  }
+  if (elements.pricingForm.elements.tennisDayPrice) {
+    elements.pricingForm.elements.tennisDayPrice.value = formatPriceInput(pricing.tennis.dayPrice);
+  }
+  if (elements.pricingForm.elements.tennisNightPrice) {
+    elements.pricingForm.elements.tennisNightPrice.value = formatPriceInput(pricing.tennis.nightPrice);
   }
   if (elements.pricingForm.elements.nightStartsAt) {
     elements.pricingForm.elements.nightStartsAt.value = pricing.nightStartsAt;
@@ -1588,9 +1636,15 @@ function fillConfigForm() {
 
 function getDefaultPricingConfig() {
   return {
-    dayPrice: 80,
-    nightPrice: 80,
     nightStartsAt: "18:00",
+    beachTennis: {
+      dayPrice: 80,
+      nightPrice: 80,
+    },
+    tennis: {
+      dayPrice: 100,
+      nightPrice: 100,
+    },
     updatedAt: "",
   };
 }
@@ -1606,8 +1660,14 @@ async function savePricingConfig(form) {
 
   const formData = new FormData(form);
   const candidate = {
-    dayPrice: parseCurrencyInput(formData.get("dayPrice"), 0),
-    nightPrice: parseCurrencyInput(formData.get("nightPrice"), 0),
+    beachTennis: {
+      dayPrice: parseCurrencyInput(formData.get("dayPrice"), 0),
+      nightPrice: parseCurrencyInput(formData.get("nightPrice"), 0),
+    },
+    tennis: {
+      dayPrice: parseCurrencyInput(formData.get("tennisDayPrice"), 0),
+      nightPrice: parseCurrencyInput(formData.get("tennisNightPrice"), 0),
+    },
     nightStartsAt: String(formData.get("nightStartsAt") || "").trim(),
   };
   const validation = validatePricingConfig(candidate);
@@ -1652,12 +1712,16 @@ function validatePricingConfig(config) {
     return { valid: false, message: "Preencha os valores corretamente antes de salvar." };
   }
 
-  if (!(config.dayPrice > 0)) {
-    return { valid: false, message: "Valor diurno deve ser maior que zero." };
-  }
-
-  if (!(config.nightPrice > 0)) {
-    return { valid: false, message: "Valor noturno deve ser maior que zero." };
+  const groups = [config.beachTennis, config.tennis];
+  const labels = ["Beach Tennis", "Tênis"];
+  for (let i = 0; i < groups.length; i += 1) {
+    const group = groups[i] || {};
+    if (!(group.dayPrice > 0)) {
+      return { valid: false, message: `Valor diurno de ${labels[i]} deve ser maior que zero.` };
+    }
+    if (!(group.nightPrice > 0)) {
+      return { valid: false, message: `Valor noturno de ${labels[i]} deve ser maior que zero.` };
+    }
   }
 
   if (!isValidTimeValue(config.nightStartsAt)) {
@@ -1670,20 +1734,40 @@ function validatePricingConfig(config) {
 function normalizePricingConfig(config) {
   const fallback = getDefaultPricingConfig();
   const incoming = config || {};
-  const dayPrice = parseCurrencyInput(incoming.dayPrice, fallback.dayPrice);
-  const nightPrice = parseCurrencyInput(incoming.nightPrice, fallback.nightPrice);
+  const beachTennis = incoming.beachTennis || {
+    dayPrice: incoming.dayPrice ?? incoming.BT ?? incoming.BEACH ?? fallback.beachTennis.dayPrice,
+    nightPrice: incoming.nightPrice ?? incoming.BTNight ?? incoming.BEACHNight ?? fallback.beachTennis.nightPrice,
+  };
+  const tennis = incoming.tennis || {
+    dayPrice: incoming.tennisDayPrice ?? incoming.TN ?? fallback.tennis.dayPrice,
+    nightPrice: incoming.tennisNightPrice ?? incoming.TNNight ?? fallback.tennis.nightPrice,
+  };
   const nightStartsAt = isValidTimeValue(incoming.nightStartsAt) ? incoming.nightStartsAt : fallback.nightStartsAt;
   return {
-    dayPrice: dayPrice > 0 ? dayPrice : fallback.dayPrice,
-    nightPrice: nightPrice > 0 ? nightPrice : fallback.nightPrice,
+    beachTennis: {
+      dayPrice: parseCurrencyInput(beachTennis.dayPrice, fallback.beachTennis.dayPrice) > 0
+        ? parseCurrencyInput(beachTennis.dayPrice, fallback.beachTennis.dayPrice)
+        : fallback.beachTennis.dayPrice,
+      nightPrice: parseCurrencyInput(beachTennis.nightPrice, fallback.beachTennis.nightPrice) > 0
+        ? parseCurrencyInput(beachTennis.nightPrice, fallback.beachTennis.nightPrice)
+        : fallback.beachTennis.nightPrice,
+    },
+    tennis: {
+      dayPrice: parseCurrencyInput(tennis.dayPrice, fallback.tennis.dayPrice) > 0
+        ? parseCurrencyInput(tennis.dayPrice, fallback.tennis.dayPrice)
+        : fallback.tennis.dayPrice,
+      nightPrice: parseCurrencyInput(tennis.nightPrice, fallback.tennis.nightPrice) > 0
+        ? parseCurrencyInput(tennis.nightPrice, fallback.tennis.nightPrice)
+        : fallback.tennis.nightPrice,
+    },
     nightStartsAt,
     updatedAt: String(incoming.updatedAt || fallback.updatedAt || ""),
   };
 }
 
-function resolveSlotPricing(time, pricingConfig) {
+function resolveSlotPricing(time, courtType, pricingConfig) {
   const config = normalizePricingConfig(pricingConfig || loadPricingConfig());
-  const pricing = getPriceForTime(time, config);
+  const pricing = getPriceForTime(time, config, courtType);
   return {
     ...pricing,
     priceText: formatCurrencyBRL(pricing.price),
@@ -1694,35 +1778,42 @@ function resolveSlotPricing(time, pricingConfig) {
 
 function getSelectedSlotPricing() {
   if (!state.selectedSlot) {
-    return resolveSlotPricing("07:00", loadPricingConfig());
+    return resolveSlotPricing("07:00", "Beach Tennis", loadPricingConfig());
   }
 
   if (state.selectedSlot.pricing) {
     return state.selectedSlot.pricing;
   }
 
-  return resolveSlotPricing(state.selectedSlot.time, loadPricingConfig());
+  return resolveSlotPricing(
+    state.selectedSlot.time,
+    state.selectedSlot.courtType || getCourtById(state.selectedSlot.courtId)?.type || "Beach Tennis",
+    loadPricingConfig()
+  );
 }
 
-function getPriceForTime(time, pricingConfig) {
+function getPriceForTime(time, pricingConfig, courtType) {
   const config = normalizePricingConfig(pricingConfig || loadPricingConfig());
   const minutes = timeToMinutes(time);
   if (minutes === null) {
     console.warn("Horário inválido ao calcular preço:", time);
-    return { price: config.dayPrice, period: "diurno" };
+    const fallbackGroup = getPricingGroupConfig(config, courtType);
+    return { price: fallbackGroup.dayPrice, period: "diurno" };
   }
 
   const nightStartMinutes = timeToMinutes(config.nightStartsAt);
   if (nightStartMinutes === null) {
     console.warn("Horário inválido na configuração de preço:", config.nightStartsAt);
-    return { price: config.dayPrice, period: "diurno" };
+    const fallbackGroup = getPricingGroupConfig(config, courtType);
+    return { price: fallbackGroup.dayPrice, period: "diurno" };
   }
 
+  const groupConfig = getPricingGroupConfig(config, courtType);
   if (minutes >= nightStartMinutes) {
-    return { price: config.nightPrice, period: "noturno" };
+    return { price: groupConfig.nightPrice, period: "noturno" };
   }
 
-  return { price: config.dayPrice, period: "diurno" };
+  return { price: groupConfig.dayPrice, period: "diurno" };
 }
 
 function timeToMinutes(time) {
@@ -1780,6 +1871,14 @@ function formatPeriodLabel(period) {
   return period === "noturno" ? "Noturno" : "Diurno";
 }
 
+function getPricingGroupConfig(pricingConfig, courtType) {
+  const normalizedType = String(courtType || "").toLowerCase();
+  if (normalizedType.includes("beach")) {
+    return pricingConfig.beachTennis || getDefaultPricingConfig().beachTennis;
+  }
+  return pricingConfig.tennis || getDefaultPricingConfig().tennis;
+}
+
 function updatePricingStatus(message) {
   if (elements.pricingStatus) {
     elements.pricingStatus.textContent = message;
@@ -1796,8 +1895,14 @@ function updatePricingFormState() {
   }
 
   const candidate = {
-    dayPrice: parseCurrencyInput(elements.pricingForm.elements.dayPrice?.value, 0),
-    nightPrice: parseCurrencyInput(elements.pricingForm.elements.nightPrice?.value, 0),
+    beachTennis: {
+      dayPrice: parseCurrencyInput(elements.pricingForm.elements.dayPrice?.value, 0),
+      nightPrice: parseCurrencyInput(elements.pricingForm.elements.nightPrice?.value, 0),
+    },
+    tennis: {
+      dayPrice: parseCurrencyInput(elements.pricingForm.elements.tennisDayPrice?.value, 0),
+      nightPrice: parseCurrencyInput(elements.pricingForm.elements.tennisNightPrice?.value, 0),
+    },
     nightStartsAt: String(elements.pricingForm.elements.nightStartsAt?.value || ""),
   };
   const validation = validatePricingConfig(candidate);
@@ -1873,6 +1978,37 @@ function reuseLastBookingContact() {
   } catch (error) {
     console.error(error);
     updateBanner("Não foi possível reaproveitar os dados agora. Preencha manualmente.", true);
+  }
+}
+
+async function copyPixKeyToClipboard() {
+  const value = String(state.settings.pixKey || DEFAULT_SETTINGS.pixKey).trim();
+  if (!value) {
+    updateBanner("Chave PIX não configurada.", true);
+    return;
+  }
+
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value);
+    } else {
+      const temp = document.createElement("textarea");
+      temp.value = value;
+      temp.setAttribute("readonly", "true");
+      temp.style.position = "fixed";
+      temp.style.left = "-9999px";
+      document.body.appendChild(temp);
+      temp.select();
+      document.execCommand("copy");
+      temp.remove();
+    }
+    if (elements.pixCopyFeedback) {
+      elements.pixCopyFeedback.textContent = "Chave PIX copiada.";
+    }
+    updateBanner("Chave PIX copiada.");
+  } catch (error) {
+    console.error(error);
+    updateBanner("Não foi possível copiar a chave PIX agora.", true);
   }
 }
 

@@ -169,11 +169,33 @@ function updateConfig_(spreadsheet, payload) {
     whatsappPhoneNumber: String(settings.whatsappPhoneNumber || existingEntries.whatsappPhoneNumber || "").trim(),
     openingStart: String(settings.openingStart || existingEntries.openingStart || "07:00").trim(),
     openingEnd: String(settings.openingEnd || existingEntries.openingEnd || "22:00").trim(),
-    "pricing.dayPrice": String(
-      pricingConfig.dayPrice || settings.dayPrice || existingEntries["pricing.dayPrice"] || existingEntries.dayPrice || ""
+    "pricing.beachTennis.dayPrice": String(
+      (pricingConfig.beachTennis && pricingConfig.beachTennis.dayPrice) ||
+        settings.dayPrice ||
+        existingEntries["pricing.beachTennis.dayPrice"] ||
+        existingEntries.dayPrice ||
+        ""
     ).trim(),
-    "pricing.nightPrice": String(
-      pricingConfig.nightPrice || settings.nightPrice || existingEntries["pricing.nightPrice"] || existingEntries.nightPrice || ""
+    "pricing.beachTennis.nightPrice": String(
+      (pricingConfig.beachTennis && pricingConfig.beachTennis.nightPrice) ||
+        settings.nightPrice ||
+        existingEntries["pricing.beachTennis.nightPrice"] ||
+        existingEntries.nightPrice ||
+        ""
+    ).trim(),
+    "pricing.tennis.dayPrice": String(
+      (pricingConfig.tennis && pricingConfig.tennis.dayPrice) ||
+        settings.tennisDayPrice ||
+        existingEntries["pricing.tennis.dayPrice"] ||
+        existingEntries.tennisDayPrice ||
+        ""
+    ).trim(),
+    "pricing.tennis.nightPrice": String(
+      (pricingConfig.tennis && pricingConfig.tennis.nightPrice) ||
+        settings.tennisNightPrice ||
+        existingEntries["pricing.tennis.nightPrice"] ||
+        existingEntries.tennisNightPrice ||
+        ""
     ).trim(),
     "pricing.nightStartsAt": String(
       pricingConfig.nightStartsAt ||
@@ -196,14 +218,12 @@ function updateConfig_(spreadsheet, payload) {
     whatsappPhoneNumber: true,
     openingStart: true,
     openingEnd: true,
-    "pricing.dayPrice": true,
-    "pricing.nightPrice": true,
+    "pricing.beachTennis.dayPrice": true,
+    "pricing.beachTennis.nightPrice": true,
+    "pricing.tennis.dayPrice": true,
+    "pricing.tennis.nightPrice": true,
     "pricing.nightStartsAt": true,
     "pricing.updatedAt": true,
-    BT1: true,
-    BT2: true,
-    TN1: true,
-    TN2: true,
   };
 
   Object.keys(existingEntries).forEach(function (key) {
@@ -217,14 +237,12 @@ function updateConfig_(spreadsheet, payload) {
     "whatsappPhoneNumber",
     "openingStart",
     "openingEnd",
-    "pricing.dayPrice",
-    "pricing.nightPrice",
+    "pricing.beachTennis.dayPrice",
+    "pricing.beachTennis.nightPrice",
+    "pricing.tennis.dayPrice",
+    "pricing.tennis.nightPrice",
     "pricing.nightStartsAt",
     "pricing.updatedAt",
-    "BT1",
-    "BT2",
-    "TN1",
-    "TN2",
   ]);
 
   return { ok: true, updated: true };

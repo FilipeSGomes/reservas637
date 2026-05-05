@@ -36,24 +36,22 @@ As colunas precisam permanecer nesta ordem:
 
 Chaves esperadas em `config`:
 
-- `pixKey`
+- `pixKey` preenchido no admin, sem fixar no código
 - `whatsappPhoneNumber` em dígitos, por exemplo `5511944554650`
 - `openingStart`
 - `openingEnd`
-- `pricing.dayPrice`
-- `pricing.nightPrice`
+- `pricing.beachTennis.dayPrice`
+- `pricing.beachTennis.nightPrice`
+- `pricing.tennis.dayPrice`
+- `pricing.tennis.nightPrice`
 - `pricing.nightStartsAt`
 - `pricing.updatedAt`
-- `BT1`
-- `BT2`
-- `TN1`
-- `TN2`
 - `copy.*` para textos opcionais do front, se quiser centralizar as mensagens no Sheets
 - Exemplos de `copy.*`: `quickSlotEyebrow`, `heroHoursLabel`, `scheduleTitle`, `bookingPixLabel`, `pixWhatsAppMessage`
 
 Regra de preço:
 
-- o sistema calcula `dayPrice` para horários anteriores a `pricing.nightStartsAt`
-- o sistema calcula `nightPrice` para horários maiores ou iguais ao início do período noturno
+- o sistema calcula o valor por tipo de quadra: Beach Tennis ou Tênis
+- o sistema usa `pricing.nightStartsAt` para alternar entre o valor diurno e noturno
 - reservas novas salvam `price`, `period` e `pricingSnapshot`
 - reservas antigas sem `price` seguem como legado, sem reescrita automática
