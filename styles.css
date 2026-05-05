@@ -398,16 +398,17 @@ h1 {
 }
 
 .notification-container {
-  position: fixed;
-  z-index: 99999;
+  position: fixed !important;
+  z-index: 2147483647 !important;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translate3d(-50%, 0, 0);
   top: calc(16px + env(safe-area-inset-top));
   width: calc(100% - 32px);
   max-width: 520px;
   pointer-events: none;
   opacity: 0;
   transition: opacity 180ms ease;
+  isolation: isolate;
 }
 
 .notification-container.visible {
@@ -416,7 +417,7 @@ h1 {
 
 .notification {
   position: relative;
-  z-index: 100000;
+  z-index: 2147483647;
   pointer-events: auto;
   border-radius: 16px;
   padding: 12px 14px;
