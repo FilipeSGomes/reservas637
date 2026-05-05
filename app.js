@@ -457,16 +457,22 @@ function configRowsToSettings(rows) {
   rows.forEach((row) => {
     const key = String(row.key || "").trim();
     const value = String(row.value || "").trim();
+    const normalizedKey = key.toLowerCase().replace(/[\s_-]/g, "");
     if (!key) {
       return;
     }
 
-    if (key === "pixKey" || key === "openingStart" || key === "openingEnd") {
+    if (normalizedKey === "pixkey" || normalizedKey === "pix") {
+      next.pixKey = value || next.pixKey;
+      return;
+    }
+
+    if (key === "openingStart" || key === "openingEnd") {
       next[key] = value || next[key];
       return;
     }
 
-    if (key === "whatsappPhoneNumber") {
+    if (key === "whatsappPhoneNumber" || normalizedKey === "whatsappphonenumber") {
       next.whatsappPhoneNumber = normalizeWhatsAppPhoneStorage(value) || next.whatsappPhoneNumber;
       return;
     }
