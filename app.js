@@ -89,6 +89,7 @@ let loadingOverlayCounter = 0;
 let loadingOverlayTimeoutId = null;
 let lastModalTrigger = null;
 let settingsBroadcastChannel = null;
+let toastHideTimeoutId = null;
 
 const state = {
   selectedDate: getToday(),
@@ -1287,6 +1288,43 @@ function readLocalData() {
 function updateBanner(message, isError = false) {
   elements.statusBanner.textContent = message;
   elements.statusBanner.classList.toggle("error", isError);
+  if (isError) {
+    showGlobalToast(message, true);
+  }
+}
+
+function ensureGlobalToastContainer() {
+  let container = document.querySelector(".notification-container");
+  if (container) {
+    return container;
+  }
+
+  container = document.createElement("div");
+  container.className = "notification-container";
+  document.body.appendChild(container);
+  return container;
+}
+
+function showGlobalToast(message, isError = false) {
+  const container = ensureGlobalToastContainer();
+  container.innerHTML = "";
+
+  const toast = document.createElement("div");
+  toast.className = "notification";
+  if (isError) {
+    toast.classList.add("error");
+  }
+  toast.textContent = message;
+  container.appendChild(toast);
+  container.classList.add("visible");
+
+  if (toastHideTimeoutId) {
+    clearTimeout(toastHideTimeoutId);
+  }
+  toastHideTimeoutId = window.setTimeout(() => {
+    container.classList.remove("visible");
+    toastHideTimeoutId = null;
+  }, 3200);
 }
 
 function startPendingOperation(key) {

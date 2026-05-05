@@ -167,3 +167,16 @@
   3. `#date-input` explicitamente limitado a 100% da largura disponível.
   4. Ajustes mobile para manter toque/ícone sem overflow.
 - **Impacto funcional**: nenhum (somente CSS).
+
+## 2026-05-05 — Hardening responsivo mobile real (iPhone Safari/Chrome)
+
+- **Escopo**: ajustes visuais/CSS somente.
+- **Arquivo alterado**: `styles.css`.
+- **Ajustes principais**:
+  1. Reforço global de contenção horizontal em `html/body`.
+  2. Safe-area inferior reforçada para evitar sobreposição da barra inferior iOS.
+  3. `#date-input` com sizing estável para iOS real.
+  4. `toolbar` e wrappers com `min-width: 0` e contenção de largura.
+  5. `legend-chip` com quebra controlada em 2 colunas e 1 coluna <=390px.
+  6. Botão principal do card de próximo horário com margem segura inferior.
+- **Impacto funcional**: nenhum (sem alteração de regra de reserva/preço/status).
