@@ -712,7 +712,7 @@ function getCourtScheduleSummary(courtId, visibleHours) {
     return "Sem horários disponíveis";
   }
   if (nextAvailable) {
-    return `${availableCount} disponíveis • Próximo: ${nextAvailable}`;
+    return `${availableCount} horários disponíveis • Próximo: ${nextAvailable}`;
   }
   return `${availableCount} horários disponíveis`;
 }
