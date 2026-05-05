@@ -145,3 +145,14 @@
 - **Aprovação**: derivada da solicitação explícita do usuário para resolver a pendência residual.
 - **Arquivos alterados**: `app.js`, `admin/index.html`, `.codex-agent/contracts/003-unificacao-fonte-preco-admin.md`, `.codex-agent/DECISOES.md`, `.codex-agent/CHANGELOG-AGENTE.md`.
 - **Resultado**: eliminada ambiguidade de edição de preços no admin; `pricingConfig` é a fonte oficial e `pricingByCourt` tornou-se representação derivada/informativa.
+
+## 2026-05-05 — Implementação do Contrato 004 (agenda em cards expansíveis)
+
+- **Aprovação**: usuário aprovou execução no chat.
+- **Arquivos alterados**: `app.js`, `styles.css`.
+- **Mudanças**:
+  1. Agenda por quadra passou a renderizar cabeçalho de card com controle expandir/recolher.
+  2. Horários ficam visíveis apenas dentro do corpo expandido da quadra correspondente.
+  3. Resumo no cabeçalho por quadra com disponibilidade e próximo horário.
+  4. Mantido comportamento existente de clique em horário disponível para abrir pré-reserva.
+- **Validação técnica**: `node --check app.js` aprovado.

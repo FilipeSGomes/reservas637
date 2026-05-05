@@ -32,3 +32,4 @@
 - [CONFIRMADO] Contrato 002 implementado: persistência de `copy.*` no Apps Script e aplicação de textos de billing no frontend corrigidas.
 - [PENDENTE] Definir consolidação final entre `pricingByCourt` e `pricingConfig` para eliminar ambiguidade de configuração de preços no admin.
 - [CONFIRMADO] Contrato 003 implementado: `pricingConfig` consolidado como fonte única de preço no admin/runtime; campos por quadra tornados informativos para evitar dupla edição.
+- [CONFIRMADO] Contrato 004 implementado: agenda reorganizada em cards expansíveis por quadra sem alterar regras de preço, status, disponibilidade e fluxo de reserva.

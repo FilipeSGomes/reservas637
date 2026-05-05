@@ -95,6 +95,7 @@ const state = {
   selectedSlot: null,
   reservations: [],
   blocks: [],
+  expandedCourts: {},
   adminEnabled: false,
   settings: { ...DEFAULT_SETTINGS },
   pendingOperations: new Set(),
@@ -632,13 +633,26 @@ function renderSchedule() {
   for (const court of COURTS) {
     const column = document.createElement("article");
     column.className = "schedule-column";
+    const isExpanded = Boolean(state.expandedCourts[court.id]);
+    const summary = getCourtScheduleSummary(court.id, visibleHours);
 
-    const header = document.createElement("div");
-    header.className = "schedule-column-header";
-    header.innerHTML = `<h3>${court.id}</h3><p>${court.name}</p>`;
+    const header = document.createElement("button");
+    header.type = "button";
+    header.className = "schedule-column-header court-card-header";
+    header.setAttribute("aria-expanded", String(isExpanded));
+    header.innerHTML = `
+      <span class="court-card-main">
+        <strong>${court.id}</strong>
+        <small>${court.name}</small>
+      </span>
+      <span class="court-card-summary">${summary}</span>
+      <span class="court-card-toggle" aria-hidden="true">${isExpanded ? "▴" : "▾"}</span>
+    `;
+    header.addEventListener("click", () => toggleCourtExpansion(court.id));
 
     const list = document.createElement("div");
     list.className = "slot-list";
+    list.classList.toggle("hidden", !isExpanded);
 
     visibleHours.forEach((time) => {
       const slotState = getSlotState(court.id, time);
@@ -672,6 +686,35 @@ function renderSchedule() {
     column.append(header, list);
     elements.scheduleGrid.appendChild(column);
   }
+}
+
+function toggleCourtExpansion(courtId) {
+  state.expandedCourts = {
+    ...state.expandedCourts,
+    [courtId]: !state.expandedCourts[courtId],
+  };
+  renderSchedule();
+}
+
+function getCourtScheduleSummary(courtId, visibleHours) {
+  let availableCount = 0;
+  let nextAvailable = "";
+  for (const time of visibleHours) {
+    const slotState = getSlotState(courtId, time);
+    if (slotState.status === "available") {
+      availableCount += 1;
+      if (!nextAvailable) {
+        nextAvailable = time;
+      }
+    }
+  }
+  if (availableCount === 0) {
+    return "Sem horários disponíveis";
+  }
+  if (nextAvailable) {
+    return `${availableCount} disponíveis • Próximo: ${nextAvailable}`;
+  }
+  return `${availableCount} horários disponíveis`;
 }
 
 function getSlotState(courtId, time) {
