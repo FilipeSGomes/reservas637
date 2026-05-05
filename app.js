@@ -841,6 +841,7 @@ function showRegistrationStep() {
   elements.bookingPaymentStep.classList.add("hidden");
   elements.bookingNextButton.classList.remove("hidden");
   elements.bookingSubmitButton.classList.add("hidden");
+  updateReuseButtonVisibility();
 }
 
 function showPaymentStep() {
@@ -2059,6 +2060,7 @@ function saveLastBookingContact(booking) {
     cpf: String(booking.cpf || "").replace(/\D/g, ""),
   };
   localStorage.setItem(LAST_BOOKING_CONTACT_KEY, JSON.stringify(snapshot));
+  updateReuseButtonVisibility();
 }
 
 function reuseLastBookingContact() {
@@ -2068,6 +2070,7 @@ function reuseLastBookingContact() {
   const raw = localStorage.getItem(LAST_BOOKING_CONTACT_KEY);
   if (!raw) {
     updateBanner("Ainda não encontramos uma reserva anterior para preencher seus dados.", true);
+    updateReuseButtonVisibility();
     return;
   }
   try {
@@ -2078,8 +2081,34 @@ function reuseLastBookingContact() {
     updateBanner("Pronto! Nome, telefone e CPF preenchidos com base na sua última reserva.");
   } catch (error) {
     console.error(error);
+    localStorage.removeItem(LAST_BOOKING_CONTACT_KEY);
+    updateReuseButtonVisibility();
     updateBanner("Não foi possível reaproveitar os dados agora. Preencha manualmente.", true);
   }
+}
+
+function hasReusableBookingContact() {
+  const raw = localStorage.getItem(LAST_BOOKING_CONTACT_KEY);
+  if (!raw) {
+    return false;
+  }
+  try {
+    const parsed = JSON.parse(raw);
+    const name = String(parsed.name || "").trim();
+    const phone = String(parsed.phone || "").replace(/\D/g, "");
+    const cpf = String(parsed.cpf || "").replace(/\D/g, "");
+    return Boolean(name && phone.length >= 10 && cpf.length === 11);
+  } catch (error) {
+    console.error(error);
+    return false;
+  }
+}
+
+function updateReuseButtonVisibility() {
+  if (!elements.bookingReuseButton) {
+    return;
+  }
+  elements.bookingReuseButton.classList.toggle("hidden", !hasReusableBookingContact());
 }
 
 async function copyPixKeyToClipboard() {
