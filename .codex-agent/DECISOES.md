@@ -33,3 +33,4 @@
 - [PENDENTE] Definir consolidação final entre `pricingByCourt` e `pricingConfig` para eliminar ambiguidade de configuração de preços no admin.
 - [CONFIRMADO] Contrato 003 implementado: `pricingConfig` consolidado como fonte única de preço no admin/runtime; campos por quadra tornados informativos para evitar dupla edição.
 - [CONFIRMADO] Contrato 004 implementado: agenda reorganizada em cards expansíveis por quadra sem alterar regras de preço, status, disponibilidade e fluxo de reserva.
+- [CONFIRMADO] Contrato 005 implementado: overflow horizontal do campo de data tratado por CSS no contexto da toolbar, sem alterar regras de agenda/reserva.

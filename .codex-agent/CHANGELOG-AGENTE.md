@@ -156,3 +156,14 @@
   3. Resumo no cabeçalho por quadra com disponibilidade e próximo horário.
   4. Mantido comportamento existente de clique em horário disponível para abrir pré-reserva.
 - **Validação técnica**: `node --check app.js` aprovado.
+
+## 2026-05-05 — Implementação do Contrato 005 (overflow campo de data mobile)
+
+- **Aprovação**: usuário aprovou execução no chat.
+- **Arquivo alterado**: `styles.css`.
+- **Correções aplicadas**:
+  1. Wrapper do campo na toolbar com `width/max-width: 100%`, `min-width: 0`, `box-sizing: border-box`.
+  2. Inputs/selects/textarea com `max-width: 100%`, `min-width: 0`, `box-sizing: border-box`.
+  3. `#date-input` explicitamente limitado a 100% da largura disponível.
+  4. Ajustes mobile para manter toque/ícone sem overflow.
+- **Impacto funcional**: nenhum (somente CSS).

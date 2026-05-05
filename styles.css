@@ -241,6 +241,13 @@ h1 {
   gap: 16px;
 }
 
+.toolbar .field {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
 .field {
   display: grid;
   gap: 8px;
@@ -255,12 +262,22 @@ h1 {
 .field select,
 .field textarea {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   border: 1px solid var(--line);
   border-radius: 14px;
   min-height: 48px;
   padding: 12px 14px;
   background: white;
   color: var(--text);
+}
+
+#date-input {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .field textarea {
@@ -1161,6 +1178,18 @@ body.modal-open {
   .schedule-section,
   .admin-panel {
     padding: 14px;
+  }
+
+  .toolbar .field {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  #date-input {
+    font-size: 16px;
+    padding-left: 12px;
+    padding-right: 12px;
   }
 
   .section-heading {
