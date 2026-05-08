@@ -27,11 +27,11 @@
     <div class="page-shell">
       <header class="install-header">
         <div>
-          <p class="eyebrow">637 Cervejaria</p>
-          <h1>Instale o app</h1>
-          <p>Acesse a reserva de quadras direto pela tela inicial do celular.</p>
+          <p class="eyebrow" id="install-client-name">637 Cervejaria</p>
+          <h1 id="install-title">Instale o app</h1>
+          <p id="install-description">Acesse a reserva de quadras direto pela tela inicial do celular.</p>
         </div>
-        <a class="install-link" href="index.html">Voltar para reservas</a>
+        <a class="install-link" id="install-back-link" href="index.html">Voltar para reservas</a>
       </header>
 
       <main>
@@ -66,5 +66,51 @@
         </section>
       </main>
     </div>
+    <script src="config/637.config.js"></script>
+    <script>
+      (function () {
+        var cfg = window.CLIENT_CONFIG || {};
+        var branding = cfg.branding || {};
+        var texts = cfg.texts || {};
+        var client = cfg.client || {};
+        var themeColor = branding.themeColor || "";
+        var appleAppTitle = branding.appleAppTitle || client.name || "";
+
+        if (themeColor) {
+          var themeMeta = document.querySelector('meta[name="theme-color"]');
+          if (themeMeta) themeMeta.setAttribute("content", themeColor);
+        }
+        if (appleAppTitle) {
+          var appleMeta = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+          if (appleMeta) appleMeta.setAttribute("content", appleAppTitle);
+        }
+        if (branding.installPageTitle) {
+          document.title = branding.installPageTitle;
+        }
+        if (branding.favicon32) {
+          var favicon = document.querySelector('link[rel="icon"][sizes="32x32"]');
+          if (favicon) favicon.setAttribute("href", branding.favicon32);
+        }
+        if (branding.appleTouchIcon) {
+          var appleIcon = document.querySelector('link[rel="apple-touch-icon"]');
+          if (appleIcon) appleIcon.setAttribute("href", branding.appleTouchIcon);
+        }
+        if (branding.manifestPath) {
+          var manifestLink = document.querySelector('link[rel="manifest"]');
+          if (manifestLink) manifestLink.setAttribute("href", branding.manifestPath);
+        }
+        var nameEl = document.querySelector("#install-client-name");
+        if (nameEl) nameEl.textContent = client.name || "637 Cervejaria";
+        var titleEl = document.querySelector("#install-title");
+        if (titleEl) titleEl.textContent = texts.installTitle || "Instale o app";
+        var descEl = document.querySelector("#install-description");
+        if (descEl) {
+          descEl.textContent =
+            texts.installDescription || "Acesse a reserva de quadras direto pela tela inicial do celular.";
+        }
+        var backEl = document.querySelector("#install-back-link");
+        if (backEl) backEl.textContent = texts.installBackLink || "Voltar para reservas";
+      })();
+    </script>
   </body>
 </html>

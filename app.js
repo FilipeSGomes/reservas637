@@ -1,77 +1,125 @@
+const CLIENT_CONFIG = window.CLIENT_CONFIG || {};
+const LEGACY_APP_CONFIG = window.APP_CONFIG || {};
+const CLIENT_INTEGRATIONS = CLIENT_CONFIG.integrations || {};
+const CLIENT_ADMIN = CLIENT_CONFIG.admin || {};
+const CLIENT_STORAGE = CLIENT_CONFIG.storage || {};
+const CLIENT_TEXTS = CLIENT_CONFIG.texts || {};
+const CLIENT_PAYMENTS = CLIENT_CONFIG.payments || {};
+const CLIENT_BUSINESS_HOURS = CLIENT_CONFIG.businessHours || {};
+const CLIENT_STATUS = CLIENT_CONFIG.statuses || {};
+const CLIENT_BRANDING = CLIENT_CONFIG.branding || {};
+const CLIENT_CONTACT = CLIENT_CONFIG.contact || {};
+
 const APP_CONFIG = {
-  googleSheetsApiKey: "",
-  spreadsheetId: "1yAY3OEWCv0Be3c7YxhTl70rTNBWqJAUXknpU5-UkNXc",
-  appsScriptWebhookUrl: "https://script.google.com/macros/s/AKfycbxAQeWPiF0Nhi0ZSJwMFKa7ni6YiMEX5KIfScXfYH0B5C4mwDh56GyIKmylj8UF28m2/exec",
-  adminPassword: "637admin",
+  googleSheetsApiKey:
+    LEGACY_APP_CONFIG.googleSheetsApiKey || CLIENT_INTEGRATIONS.googleSheetsApiKey || "",
+  spreadsheetId:
+    LEGACY_APP_CONFIG.spreadsheetId ||
+    CLIENT_INTEGRATIONS.spreadsheetId ||
+    "",
+  appsScriptWebhookUrl:
+    LEGACY_APP_CONFIG.appsScriptWebhookUrl ||
+    CLIENT_INTEGRATIONS.appsScriptWebhookUrl ||
+    "",
+  adminPassword: LEGACY_APP_CONFIG.adminPassword || CLIENT_ADMIN.password || "",
 };
 
 const CONFIG_SHEET_NAME = "config";
 const sheetsUrl = `https://docs.google.com/spreadsheets/d/${APP_CONFIG.spreadsheetId}/gviz/tq?tqx=out:json`;
 
-const COURTS = [
+const DEFAULT_COURTS = [
   { id: "BT1", name: "Beach Tennis 1", type: "Beach Tennis" },
   { id: "BT2", name: "Beach Tennis 2", type: "Beach Tennis" },
   { id: "TN1", name: "Tênis 1", type: "Tênis" },
   { id: "TN2", name: "Tênis 2", type: "Tênis" },
 ];
+const COURTS = (
+  Array.isArray(CLIENT_CONFIG.courts) && CLIENT_CONFIG.courts.length
+    ? CLIENT_CONFIG.courts
+    : DEFAULT_COURTS
+)
+  .filter((court) => court && court.active !== false)
+  .map((court) => ({
+    id: String(court.id || "").trim(),
+    name: String(court.name || "").trim(),
+    type: String(court.type || "")
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (char) => char.toUpperCase())
+      .trim() || "Beach Tennis",
+  }))
+  .filter((court) => court.id && court.name);
 
 function getCourtById(courtId) {
   return COURTS.find((court) => court.id === courtId) || null;
 }
 
-const LOCAL_STORAGE_KEY = "quadras-local-fallback";
-const SETTINGS_STORAGE_KEY = "quadras-admin-settings";
+const LOCAL_STORAGE_KEY = CLIENT_STORAGE.reservationsKey || "quadras-local-fallback";
+const LEGACY_STORAGE_KEY = "quadras-local-fallback";
+const BLOCKS_STORAGE_KEY = CLIENT_STORAGE.blocksKey || "";
+const SETTINGS_STORAGE_KEY = CLIENT_STORAGE.configCacheKey || "quadras-admin-settings";
 const FULL_DAY_BLOCK_SENTINEL = "__FULL_DAY__";
-const ADMIN_AUTH_STORAGE_KEY = "quadras-admin-auth";
-const LAST_BOOKING_CONTACT_KEY = "quadras-last-booking-contact";
+const ADMIN_AUTH_STORAGE_KEY = CLIENT_ADMIN.authStorageKey || "quadras-admin-auth";
+const LAST_BOOKING_CONTACT_KEY = CLIENT_STORAGE.lastContactKey || "quadras-last-booking-contact";
 const SETTINGS_BROADCAST_CHANNEL = "quadras-settings";
 
 const DEFAULT_COPY = {
-  quickSlotEyebrow: "Próximo horário livre",
-  quickSlotLoadingText: "Buscando o melhor horário para você...",
-  quickSlotEmptyTitle: "Sem horários livres para este dia",
-  quickSlotEmptyMeta: "Troque a data para ver os próximos horários disponíveis.",
-  quickSlotButtonText: "Reservar este horário",
-  heroHoursLabel: "Horário de funcionamento",
-  heroHoursDescription: "Blocos de 1 hora para Beach Tennis e Tênis.",
-  scheduleEyebrow: "Grade visual",
-  scheduleTitle: "Agenda por quadra e horário",
-  preBookingEyebrow: "Pré-reserva",
-  preBookingAmountLabel: "Valor da hora",
+  heroEyebrow: CLIENT_TEXTS.heroEyebrow || "637 Cervejaria • Desde 2017",
+  heroTitle: CLIENT_TEXTS.heroTitle || "Tênis, Beach Tennis e cerveja artesanal no mesmo lugar.",
+  heroCopy:
+    CLIENT_TEXTS.heroCopy ||
+    "Consulte a agenda do dia, escolha sua quadra e envie sua solicitação em menos de um minuto.",
+  heroPrimaryCta: CLIENT_TEXTS.heroPrimaryCta || "Reservar quadra",
+  installCta: CLIENT_TEXTS.installCta || "Adicionar à tela inicial",
+  whatsappClassCta: CLIENT_TEXTS.whatsappClassCta || "Reserve sua aula",
+  quickSlotEyebrow: CLIENT_TEXTS.quickSlotEyebrow || "Próximo horário livre",
+  quickSlotLoadingText: CLIENT_TEXTS.quickSlotLoadingText || "Buscando o melhor horário para você...",
+  quickSlotEmptyTitle: CLIENT_TEXTS.quickSlotEmptyTitle || "Sem horários livres para este dia",
+  quickSlotEmptyMeta: CLIENT_TEXTS.quickSlotEmptyMeta || "Troque a data para ver os próximos horários disponíveis.",
+  quickSlotButtonText: CLIENT_TEXTS.quickSlotButtonText || "Reservar este horário",
+  heroHoursLabel: CLIENT_TEXTS.heroHoursLabel || "Horário de funcionamento",
+  heroHoursDescription: CLIENT_TEXTS.heroHoursDescription || "Blocos de 1 hora para Beach Tennis e Tênis.",
+  scheduleEyebrow: CLIENT_TEXTS.scheduleEyebrow || "Grade visual",
+  scheduleTitle: CLIENT_TEXTS.scheduleTitle || "Agenda por quadra e horário",
+  preBookingEyebrow: CLIENT_TEXTS.preBookingEyebrow || "Pré-reserva",
+  preBookingAmountLabel: CLIENT_TEXTS.preBookingAmountLabel || "Valor da hora",
   preBookingRules:
+    CLIENT_TEXTS.preBookingRules ||
     "Ao confirmar, você concorda com as regras de uso da quadra. Cancelamentos devem ser feitos com 2h de antecedência.",
-  continueBookingText: "Continuar",
-  bookingEyebrow: "Nova reserva",
-  bookingPaymentTitle: "Forma de pagamento",
-  bookingPixTitle: "PIX",
-  bookingPixSubtitle: "Status pendente até confirmação do admin.",
-  bookingBillingTitle: "Faturamento",
-  bookingBillingSubtitle: "Pagamento no final do mês.",
-  bookingPixLabel: "Pagamento via PIX",
-  bookingPixInstruction: "Envie o comprovante pelo WhatsApp.",
-  bookingBillingNotice: "Valor será lançado na sua conta. Pagamento no final do mês.",
-  billingStatusText: "Pagamento no final do mês.",
-  pixWhatsAppMessage: "Olá! Segue comprovante da reserva:\nQuadra: {court}\nData: {date}\nHorário: {time}\nValor: {amount}",
-  bookingNextText: "Escolher pagamento",
-  bookingSubmitText: "Enviar solicitação",
-  bookingReuseText: "Reservar novamente",
-  confirmationEyebrow: "Solicitação enviada",
-  confirmationTitle: "Resumo da sua reserva",
-  confirmationCloseText: "Fechar",
+  continueBookingText: CLIENT_TEXTS.continueBookingText || "Continuar",
+  bookingEyebrow: CLIENT_TEXTS.bookingEyebrow || "Nova reserva",
+  bookingPaymentTitle: CLIENT_TEXTS.bookingPaymentTitle || "Forma de pagamento",
+  bookingPixTitle: CLIENT_TEXTS.bookingPixTitle || CLIENT_PAYMENTS.pix?.label || "PIX",
+  bookingPixSubtitle: CLIENT_TEXTS.bookingPixSubtitle || "Status pendente até confirmação do admin.",
+  bookingBillingTitle: CLIENT_TEXTS.bookingBillingTitle || CLIENT_PAYMENTS.billing?.label || "Faturamento",
+  bookingBillingSubtitle: CLIENT_TEXTS.bookingBillingSubtitle || "Pagamento no final do mês.",
+  bookingPixLabel: CLIENT_TEXTS.bookingPixLabel || "Pagamento via PIX",
+  bookingPixInstruction: CLIENT_TEXTS.bookingPixInstruction || "Envie o comprovante pelo WhatsApp.",
+  bookingBillingNotice: CLIENT_TEXTS.bookingBillingNotice || "Valor será lançado na sua conta. Pagamento no final do mês.",
+  billingStatusText: CLIENT_TEXTS.billingStatusText || "Pagamento no final do mês.",
+  pixWhatsAppMessage:
+    CLIENT_TEXTS.pixWhatsAppMessage ||
+    CLIENT_CONTACT.pixReceiptMessage ||
+    "Olá! Segue comprovante da reserva:\nQuadra: {court}\nData: {date}\nHorário: {time}\nValor: {amount}",
+  bookingNextText: CLIENT_TEXTS.bookingNextText || "Escolher pagamento",
+  bookingSubmitText: CLIENT_TEXTS.bookingSubmitText || "Enviar solicitação",
+  bookingReuseText: CLIENT_TEXTS.bookingReuseText || "Reservar novamente",
+  confirmationEyebrow: CLIENT_TEXTS.confirmationEyebrow || "Solicitação enviada",
+  confirmationTitle: CLIENT_TEXTS.confirmationTitle || "Resumo da sua reserva",
+  confirmationCloseText: CLIENT_TEXTS.confirmationCloseText || "Fechar",
 };
 
 const DEFAULT_SETTINGS = {
   pixKey: "",
-  whatsappPhoneNumber: "5511964809815",
+  whatsappPhoneNumber: CLIENT_CONTACT.whatsappPhoneNumber || "",
   pricingConfig: getDefaultPricingConfig(),
   pricingByCourt: {
-    BT1: "R$ 80,00",
-    BT2: "R$ 80,00",
-    TN1: "R$ 100,00",
-    TN2: "R$ 100,00",
+    BT1: formatCurrencyBRL(CLIENT_CONFIG.pricing?.byCourt?.BT1?.dayPrice ?? 80),
+    BT2: formatCurrencyBRL(CLIENT_CONFIG.pricing?.byCourt?.BT2?.dayPrice ?? 80),
+    TN1: formatCurrencyBRL(CLIENT_CONFIG.pricing?.byCourt?.TN1?.dayPrice ?? 100),
+    TN2: formatCurrencyBRL(CLIENT_CONFIG.pricing?.byCourt?.TN2?.dayPrice ?? 100),
   },
-  openingStart: "07:00",
-  openingEnd: "22:00",
+  openingStart: CLIENT_BUSINESS_HOURS.openingStart || "07:00",
+  openingEnd: CLIENT_BUSINESS_HOURS.openingEnd || "22:00",
   copy: { ...DEFAULT_COPY },
 };
 
@@ -103,6 +151,13 @@ const state = {
 };
 
 const elements = {
+  heroEyebrow: document.querySelector("#hero-eyebrow"),
+  heroTitle: document.querySelector("#hero-title"),
+  heroCopy: document.querySelector("#hero-copy"),
+  heroPrimaryCta: document.querySelector("#hero-primary-cta"),
+  installCta: document.querySelector("#install-cta"),
+  whatsappClassButton: document.querySelector("#whatsapp-class-button"),
+  heroLogoImage: document.querySelector("#hero-logo-image"),
   dateInput: document.querySelector("#date-input"),
   statusBanner: document.querySelector("#status-banner"),
   quickSlot: document.querySelector("#quick-slot"),
@@ -142,6 +197,7 @@ const elements = {
   continueBookingButton: document.querySelector("#continue-booking-button"),
   bookingModal: document.querySelector("#booking-modal"),
   bookingForm: document.querySelector("#booking-form"),
+  bookingEyebrow: document.querySelector("#booking-eyebrow"),
   bookingSlotTitle: document.querySelector("#booking-slot-title"),
   bookingRegistrationStep: document.querySelector("#booking-registration-step"),
   bookingPaymentStep: document.querySelector("#booking-payment-step"),
@@ -190,8 +246,82 @@ boot().catch((error) => {
   console.error(error);
 });
 
+function applyClientBranding() {
+  if (!CLIENT_CONFIG || !Object.keys(CLIENT_CONFIG).length) {
+    return;
+  }
+
+  const copy = DEFAULT_COPY;
+  const themeColor = CLIENT_BRANDING.themeColor || "";
+  const appleAppTitle = CLIENT_BRANDING.appleAppTitle || CLIENT_CONFIG.client?.name || "";
+  const pageTitle = CLIENT_BRANDING.pageTitle || document.title;
+  const logoPath = CLIENT_BRANDING.logoPath || "";
+  const logoAlt = CLIENT_BRANDING.logoAlt || CLIENT_CONFIG.client?.name || "Logo";
+  const manifestPath = CLIENT_BRANDING.manifestPath || "";
+  const favicon32 = CLIENT_BRANDING.favicon32 || "";
+  const appleTouchIcon = CLIENT_BRANDING.appleTouchIcon || "";
+  const classWhatsappMessage = CLIENT_CONTACT.classWhatsappMessage || "Olá, gostaria de reservar uma aula.";
+  const classWhatsappPhone = normalizeWhatsAppPhone(CLIENT_CONTACT.whatsappPhoneNumber || "");
+
+  if (themeColor) {
+    const themeMeta = document.querySelector('meta[name="theme-color"]');
+    if (themeMeta) {
+      themeMeta.setAttribute("content", themeColor);
+    }
+  }
+  if (appleAppTitle) {
+    const appleMeta = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+    if (appleMeta) {
+      appleMeta.setAttribute("content", appleAppTitle);
+    }
+  }
+  if (pageTitle) {
+    document.title = pageTitle;
+  }
+  if (manifestPath) {
+    const manifestLink = document.querySelector('link[rel="manifest"]');
+    if (manifestLink) {
+      manifestLink.setAttribute("href", manifestPath);
+    }
+  }
+  if (favicon32) {
+    const favicon = document.querySelector('link[rel="icon"][sizes="32x32"]');
+    if (favicon) {
+      favicon.setAttribute("href", favicon32);
+    }
+  }
+  if (appleTouchIcon) {
+    const appleTouch = document.querySelector('link[rel="apple-touch-icon"]');
+    if (appleTouch) {
+      appleTouch.setAttribute("href", appleTouchIcon);
+    }
+  }
+
+  if (elements.heroEyebrow) elements.heroEyebrow.textContent = copy.heroEyebrow;
+  if (elements.heroTitle) elements.heroTitle.textContent = copy.heroTitle;
+  if (elements.heroCopy) elements.heroCopy.textContent = copy.heroCopy;
+  if (elements.heroPrimaryCta) elements.heroPrimaryCta.textContent = copy.heroPrimaryCta;
+  if (elements.installCta) elements.installCta.textContent = copy.installCta;
+  if (elements.whatsappClassButton) {
+    const whatsappUrl = classWhatsappPhone ? `https://wa.me/${classWhatsappPhone}` : "https://wa.me/";
+    elements.whatsappClassButton.href = `${whatsappUrl}?text=${encodeURIComponent(classWhatsappMessage)}`;
+    const label = copy.whatsappClassCta;
+    const labelNode = elements.whatsappClassButton.querySelector("span");
+    if (labelNode) {
+      labelNode.textContent = label;
+    } else {
+      elements.whatsappClassButton.textContent = label;
+    }
+  }
+  if (elements.heroLogoImage && logoPath) {
+    elements.heroLogoImage.src = logoPath;
+    elements.heroLogoImage.alt = logoAlt;
+  }
+}
+
 async function boot() {
   ensureLoadingOverlay();
+  applyClientBranding();
   window.showLoading = showLoading;
   window.hideLoading = hideLoading;
 
@@ -624,8 +754,8 @@ function renderSchedule() {
     const message = document.createElement("article");
     message.className = "schedule-day-block";
     message.innerHTML = `
-      <h3>Quadra indisponível neste dia</h3>
-      <p>${fullDayBlock.motivo || "Bloqueio administrativo"}</p>
+      <h3>${CLIENT_TEXTS.fullDayBlockedTitle || "Quadra indisponível neste dia"}</h3>
+      <p>${fullDayBlock.motivo || CLIENT_TEXTS.fullDayBlockedFallbackReason || "Bloqueio administrativo"}</p>
     `;
     elements.scheduleGrid.appendChild(message);
     return;
@@ -785,7 +915,7 @@ function labelForStatus(status) {
 
 function openPreBookingModal(court, time) {
   if (isPastTimeSlot(state.selectedDate, time)) {
-    updateBanner("Não é possível reservar horários que já passaram.", true);
+    updateBanner(CLIENT_TEXTS.pastTimeBlocked || "Não é possível reservar horários que já passaram.", true);
     return;
   }
 
@@ -878,14 +1008,14 @@ async function submitBooking() {
     elements.dateInput.value = state.selectedDate;
     closeModal();
     await loadAgenda();
-    updateBanner("Não é possível reservar uma data passada.", true);
+    updateBanner(CLIENT_TEXTS.pastDateBlocked || "Não é possível reservar uma data passada.", true);
     return;
   }
 
   if (isPastTimeSlot(state.selectedDate, state.selectedSlot.time)) {
     closeModal();
     await loadAgenda();
-    updateBanner("Não é possível reservar horários que já passaram.", true);
+    updateBanner(CLIENT_TEXTS.pastTimeBlocked || "Não é possível reservar horários que já passaram.", true);
     return;
   }
 
@@ -899,7 +1029,10 @@ async function submitBooking() {
     nome: String(formData.get("name") || "").trim(),
     telefone: String(formData.get("phone") || "").trim(),
     cpf: String(formData.get("cpf") || "").trim(),
-    status: pagamento === "faturamento" ? "faturado" : "pendente",
+    status:
+      pagamento === "faturamento"
+        ? CLIENT_PAYMENTS.billing?.statusOnCreate || CLIENT_STATUS.billed || "faturado"
+        : CLIENT_PAYMENTS.pix?.statusOnCreate || CLIENT_STATUS.pending || "pendente",
     pagamento,
     observacao: String(formData.get("observation") || "").trim(),
     price: pricing.price,
@@ -914,7 +1047,7 @@ async function submitBooking() {
   }
 
   if (findReservationForSlot(booking.quadra, booking.horario)) {
-    updateBanner("Esse horário acabou de ser reservado. Escolha outro horário disponível.", true);
+    updateBanner(CLIENT_TEXTS.slotAlreadyBooked || "Esse horário acabou de ser reservado. Escolha outro horário disponível.", true);
     return;
   }
 
@@ -942,7 +1075,7 @@ async function submitBooking() {
     );
   } catch (error) {
     console.error(error);
-    updateFriendlyError(error, "Nao foi possivel confirmar o envio da reserva.");
+    updateFriendlyError(error, CLIENT_TEXTS.reservationSubmitError || "Nao foi possivel confirmar o envio da reserva.");
   } finally {
     finishPendingOperation(operationKey);
     setButtonLoading(elements.bookingSubmitButton, false);
@@ -950,6 +1083,14 @@ async function submitBooking() {
 }
 
 async function toggleAdminAccess() {
+  if (!CLIENT_CONFIG || !Object.keys(CLIENT_CONFIG).length) {
+    updateBanner("Configuração do cliente não carregada.", true);
+    return;
+  }
+  if (!APP_CONFIG.adminPassword) {
+    updateBanner("Senha admin não configurada.", true);
+    return;
+  }
   if (state.adminEnabled) {
     disableAdmin();
     return;
@@ -957,31 +1098,39 @@ async function toggleAdminAccess() {
 
   const password = window.prompt("Senha do admin:");
   if (password !== APP_CONFIG.adminPassword) {
-    updateBanner("Senha inválida para acesso ao painel admin.", true);
+    updateBanner(CLIENT_TEXTS.adminInvalidPassword || "Senha inválida para acesso ao painel admin.", true);
     return;
   }
 
   state.adminEnabled = true;
   elements.adminPanel?.classList.remove("hidden");
   elements.adminPanel?.setAttribute("aria-hidden", "false");
-  await refreshAdminReservations("Painel admin liberado para a data selecionada.");
+  await refreshAdminReservations(CLIENT_TEXTS.adminUnlocked || "Painel admin liberado para a data selecionada.");
 }
 
 async function loginAdmin(form) {
+  if (!CLIENT_CONFIG || !Object.keys(CLIENT_CONFIG).length) {
+    updateBanner("Configuração do cliente não carregada.", true);
+    return;
+  }
+  if (!APP_CONFIG.adminPassword) {
+    updateBanner("Senha admin não configurada.", true);
+    return;
+  }
   const formData = new FormData(form);
   const password = String(formData.get("password") || "");
   if (password !== APP_CONFIG.adminPassword) {
-    updateBanner("Senha inválida para acesso ao painel admin.", true);
+    updateBanner(CLIENT_TEXTS.adminInvalidPassword || "Senha inválida para acesso ao painel admin.", true);
     return;
   }
 
   localStorage.setItem(ADMIN_AUTH_STORAGE_KEY, "1");
   state.adminEnabled = true;
   updateAdminRouteUI();
-  await refreshAdminReservations("Painel admin liberado para a data selecionada.");
+  await refreshAdminReservations(CLIENT_TEXTS.adminUnlocked || "Painel admin liberado para a data selecionada.");
 }
 
-async function refreshAdminReservations(successMessage = "Pendências atualizadas para a data selecionada.") {
+async function refreshAdminReservations(successMessage = CLIENT_TEXTS.adminRefreshSuccess || "Pendências atualizadas para a data selecionada.") {
   if (!state.adminEnabled) {
     return;
   }
@@ -1030,7 +1179,7 @@ function renderAdminReservations() {
 
   if (!dayItems.length) {
     elements.adminReservations.innerHTML =
-      "<p class='fine-print'>Nenhuma reserva registrada para esta data.</p>";
+      `<p class='fine-print'>${CLIENT_TEXTS.noReservationsForDate || "Nenhuma reserva registrada para esta data."}</p>`;
     return;
   }
 
@@ -1039,7 +1188,9 @@ function renderAdminReservations() {
   const summary = document.createElement("p");
   summary.className = "fine-print";
   summary.textContent =
-    pendingCount === 1 ? "1 reserva pendente de confirmação." : `${pendingCount} reservas pendentes de confirmação.`;
+    pendingCount === 1
+      ? CLIENT_TEXTS.pendingReservationSingular || "1 reserva pendente de confirmação."
+      : (CLIENT_TEXTS.pendingReservationPlural || "{count} reservas pendentes de confirmação.").replace("{count}", String(pendingCount));
   elements.adminReservations.appendChild(summary);
 
   dayItems.forEach((reservation) => {
@@ -1075,7 +1226,7 @@ function renderAdminReservations() {
       const confirmButton = document.createElement("button");
       confirmButton.className = "mini-button";
       confirmButton.type = "button";
-      confirmButton.textContent = "Confirmar PIX";
+      confirmButton.textContent = CLIENT_TEXTS.confirmPixButton || "Confirmar PIX";
       confirmButton.addEventListener("click", async () => {
         await confirmReservation(reservation, confirmButton);
       });
@@ -1171,7 +1322,7 @@ async function submitRangeBlock(form) {
     updateBanner(`Bloqueio registrado para ${court} de ${startTime} até ${endTime}.`);
   } catch (error) {
     console.error(error);
-    updateFriendlyError(error, "Nao foi possivel confirmar o bloqueio.");
+    updateFriendlyError(error, CLIENT_TEXTS.blockSubmitError || "Nao foi possivel confirmar o bloqueio.");
   } finally {
     finishPendingOperation(operationKey);
     setButtonLoading(submitButton, false);
@@ -1205,7 +1356,7 @@ async function submitFullDayBlock(form) {
     updateBanner("Dia inteiro bloqueado com sucesso.");
   } catch (error) {
     console.error(error);
-    updateFriendlyError(error, "Nao foi possivel confirmar o bloqueio de dia inteiro.");
+    updateFriendlyError(error, CLIENT_TEXTS.fullDayBlockSubmitError || "Nao foi possivel confirmar o bloqueio de dia inteiro.");
   } finally {
     finishPendingOperation(operationKey);
     setButtonLoading(submitButton, false);
@@ -1241,7 +1392,16 @@ async function submitMutation(action, payload, fallbackUpdater) {
   const stored = readLocalData();
   if (typeof fallbackUpdater === "function") {
     const updated = fallbackUpdater(stored);
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+    localStorage.setItem(
+      LOCAL_STORAGE_KEY,
+      JSON.stringify({
+        reservations: updated.reservations || [],
+        blocks: updated.blocks || [],
+      })
+    );
+    if (BLOCKS_STORAGE_KEY) {
+      localStorage.setItem(BLOCKS_STORAGE_KEY, JSON.stringify(updated.blocks || []));
+    }
   }
 }
 
@@ -1263,8 +1423,10 @@ function populateSelects() {
 }
 
 function readLocalData() {
-  const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
-  if (!raw) {
+  const reservationRaw =
+    localStorage.getItem(LOCAL_STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
+  const blocksRaw = BLOCKS_STORAGE_KEY ? localStorage.getItem(BLOCKS_STORAGE_KEY) : "";
+  if (!reservationRaw && !blocksRaw) {
     return {
       reservations: [],
       blocks: [],
@@ -1272,10 +1434,13 @@ function readLocalData() {
   }
 
   try {
-    const parsed = JSON.parse(raw);
+    const parsedReservations = reservationRaw ? JSON.parse(reservationRaw) : {};
+    const parsedBlocks = blocksRaw ? JSON.parse(blocksRaw) : null;
+    const legacyBlocks = parsedReservations.blocks ?? [];
+    const isolatedBlocks = Array.isArray(parsedBlocks) ? parsedBlocks : parsedBlocks?.blocks;
     return {
-      reservations: parsed.reservations ?? [],
-      blocks: parsed.blocks ?? [],
+      reservations: parsedReservations.reservations ?? [],
+      blocks: isolatedBlocks ?? legacyBlocks,
     };
   } catch (error) {
     console.error(error);
@@ -1575,6 +1740,9 @@ function applySettings() {
   if (elements.bookingPaymentTitle) {
     elements.bookingPaymentTitle.textContent = copy.bookingPaymentTitle;
   }
+  if (elements.bookingEyebrow) {
+    elements.bookingEyebrow.textContent = copy.bookingEyebrow;
+  }
   if (elements.bookingPixTitle) {
     elements.bookingPixTitle.textContent = copy.bookingPixTitle;
   }
@@ -1736,15 +1904,22 @@ function fillConfigForm() {
 }
 
 function getDefaultPricingConfig() {
+  const pricingConfig = CLIENT_CONFIG.pricing || {};
+  const nightStart = pricingConfig.nightStart || "18:00";
+  const defaultPrice = parseCurrencyInput(pricingConfig.defaultPrice, NaN);
+  const bt1Day = parseCurrencyInput(pricingConfig.byCourt?.BT1?.dayPrice, NaN);
+  const bt1Night = parseCurrencyInput(pricingConfig.byCourt?.BT1?.nightPrice, NaN);
+  const tn1Day = parseCurrencyInput(pricingConfig.byCourt?.TN1?.dayPrice, NaN);
+  const tn1Night = parseCurrencyInput(pricingConfig.byCourt?.TN1?.nightPrice, NaN);
   return {
-    nightStartsAt: "18:00",
+    nightStartsAt: isValidTimeValue(nightStart) ? nightStart : "18:00",
     beachTennis: {
-      dayPrice: 80,
-      nightPrice: 80,
+      dayPrice: Number.isFinite(bt1Day) && bt1Day > 0 ? bt1Day : Number.isFinite(defaultPrice) && defaultPrice > 0 ? defaultPrice : 80,
+      nightPrice: Number.isFinite(bt1Night) && bt1Night > 0 ? bt1Night : Number.isFinite(defaultPrice) && defaultPrice > 0 ? defaultPrice : 80,
     },
     tennis: {
-      dayPrice: 100,
-      nightPrice: 100,
+      dayPrice: Number.isFinite(tn1Day) && tn1Day > 0 ? tn1Day : Number.isFinite(defaultPrice) && defaultPrice > 0 ? defaultPrice : 100,
+      nightPrice: Number.isFinite(tn1Night) && tn1Night > 0 ? tn1Night : Number.isFinite(defaultPrice) && defaultPrice > 0 ? defaultPrice : 100,
     },
     updatedAt: "",
   };
@@ -2069,7 +2244,11 @@ function reuseLastBookingContact() {
   }
   const raw = localStorage.getItem(LAST_BOOKING_CONTACT_KEY);
   if (!raw) {
-    updateBanner("Ainda não encontramos uma reserva anterior para preencher seus dados.", true);
+    updateBanner(
+      CLIENT_TEXTS.previousReservationNotFound ||
+        "Ainda não encontramos uma reserva anterior para preencher seus dados.",
+      true
+    );
     updateReuseButtonVisibility();
     return;
   }
@@ -2114,7 +2293,7 @@ function updateReuseButtonVisibility() {
 async function copyPixKeyToClipboard() {
   const value = String(state.settings.pixKey || DEFAULT_SETTINGS.pixKey).trim();
   if (!value) {
-    updateBanner("Chave PIX não configurada.", true);
+    updateBanner(CLIENT_TEXTS.pixKeyNotConfigured || "Chave PIX não configurada.", true);
     return;
   }
 
@@ -2133,9 +2312,9 @@ async function copyPixKeyToClipboard() {
       temp.remove();
     }
     if (elements.pixCopyFeedback) {
-      elements.pixCopyFeedback.textContent = "Chave PIX copiada.";
+      elements.pixCopyFeedback.textContent = CLIENT_TEXTS.pixKeyCopied || "Chave PIX copiada.";
     }
-    updateBanner("Chave PIX copiada.");
+    updateBanner(CLIENT_TEXTS.pixKeyCopied || "Chave PIX copiada.");
   } catch (error) {
     console.error(error);
     updateBanner("Não foi possível copiar a chave PIX agora.", true);
@@ -2226,7 +2405,7 @@ async function saveSettings(form) {
     applySettings();
     populateSelects();
     await loadAgenda();
-    updateBanner("Configurações salvas e aplicadas com sucesso.");
+    updateBanner(CLIENT_TEXTS.settingsSaved || "Configurações salvas e aplicadas com sucesso.");
   } catch (error) {
     console.error(error);
     updateFriendlyError(error, "Nao foi possivel salvar as configuracoes.");
@@ -2276,7 +2455,7 @@ async function saveCopySettings(form) {
     await loadSettingsFromSheet();
     applySettings();
     updateConfigStatus("Textos salvos e aplicados com sucesso.");
-    updateBanner("Textos do app salvos com sucesso.");
+    updateBanner(CLIENT_TEXTS.copySaved || "Textos do app salvos com sucesso.");
   } catch (error) {
     console.error(error);
     updateConfigStatus("Nao foi possivel salvar os textos agora.");

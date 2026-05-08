@@ -1,10 +1,11 @@
-const CACHE_NAME = "app-637-v4";
+const CACHE_NAME = "app-637-v5-config";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./instalar.html",
   "./styles.css",
   "./app.js",
+  "./config/637.config.js",
   "./manifest.webmanifest",
   "./images/perfil637.jpg",
   "./icons/favicon-32.png",

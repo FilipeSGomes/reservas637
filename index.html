@@ -27,9 +27,9 @@
     <div class="page-shell">
       <header class="hero">
         <div class="hero-content">
-          <p class="eyebrow">637 Cervejaria • Desde 2017</p>
-          <h1>Tênis, Beach Tennis e cerveja artesanal no mesmo lugar.</h1>
-          <p class="hero-copy">
+          <p class="eyebrow" id="hero-eyebrow">637 Cervejaria • Desde 2017</p>
+          <h1 id="hero-title">Tênis, Beach Tennis e cerveja artesanal no mesmo lugar.</h1>
+          <p class="hero-copy" id="hero-copy">
             Consulte a agenda do dia, escolha sua quadra e envie sua solicitação em menos de um minuto.
           </p>
           <div class="hero-tags" aria-label="Destaques da 637 Cervejaria">
@@ -37,11 +37,12 @@
             <span id="hero-hours-tag">07h às 22h</span>
           </div>
           <div class="hero-actions">
-            <a class="primary-button hero-cta-button" href="#schedule-grid">Reservar quadra</a>
-            <a class="install-link secondary-install-link" href="instalar.html">Adicionar à tela inicial</a>
+            <a class="primary-button hero-cta-button" id="hero-primary-cta" href="#schedule-grid">Reservar quadra</a>
+            <a class="install-link secondary-install-link" id="install-cta" href="instalar.html">Adicionar à tela inicial</a>
             <a
               class="install-link whatsapp-class-button"
-              href="https://wa.me/5511964809815?text=Olá%2C+gostaria+de+reservar+uma+aula."
+              id="whatsapp-class-button"
+              href="https://wa.me/"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Reserve sua aula pelo WhatsApp"
@@ -66,6 +67,7 @@
         <div class="hero-aside">
           <figure class="hero-logo">
             <img
+              id="hero-logo-image"
               src="images/perfil637.jpg"
               alt="Logo da 637 Cervejaria"
             />
@@ -171,7 +173,7 @@
       <form id="booking-form" class="modal-card" method="dialog">
         <div class="modal-header">
           <div>
-            <p class="eyebrow">Nova reserva</p>
+            <p class="eyebrow" id="booking-eyebrow">Nova reserva</p>
             <h3 id="booking-slot-title">Horário selecionado</h3>
           </div>
           <button id="close-modal-button" class="icon-button" type="button" aria-label="Fechar formulário de reserva">
@@ -289,6 +291,7 @@
       </form>
     </dialog>
 
+    <script src="config/637.config.js"></script>
     <script src="app.js"></script>
   </body>
 </html>
