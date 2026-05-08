@@ -62,7 +62,7 @@ const DEFAULT_COPY = {
 
 const DEFAULT_SETTINGS = {
   pixKey: "",
-  whatsappPhoneNumber: "5511944554650",
+  whatsappPhoneNumber: "5511964809815",
   pricingConfig: getDefaultPricingConfig(),
   pricingByCourt: {
     BT1: "R$ 80,00",
