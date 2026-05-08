@@ -22,15 +22,16 @@ window.CLIENT_CONFIG = {
   },
 
   contact: {
-    whatsappPhoneNumber: "5511964809815",
+    whatsappPhoneNumber: "5511944554650",
+    pixKey: "39125065823",
     classWhatsappMessage: "Olá, gostaria de reservar uma aula.",
     pixReceiptMessage:
       "Olá! Segue comprovante da reserva:\\nQuadra: {court}\\nData: {date}\\nHorário: {time}\\nValor: {amount}"
   },
 
   businessHours: {
-    openingStart: "07:00",
-    openingEnd: "22:00",
+    openingStart: "06:00",
+    openingEnd: "20:00",
     slotMinutes: 60
   },
 
@@ -65,24 +66,33 @@ window.CLIENT_CONFIG = {
     currency: "BRL",
     defaultPrice: null,
     nightStart: "18:00",
+    nightStartsAt: "18:00",
+    updatedAt: "2026-05-05T14:27:51.539Z",
     byCourt: {
       BT1: {
         dayPrice: 80,
-        nightPrice: 80
+        nightPrice: 100
       },
       BT2: {
         dayPrice: 80,
-        nightPrice: 80
+        nightPrice: 100
       },
       TN1: {
-        dayPrice: 100,
-        nightPrice: 100
+        dayPrice: 37,
+        nightPrice: 57
       },
       TN2: {
-        dayPrice: 100,
-        nightPrice: 100
+        dayPrice: 37,
+        nightPrice: 57
       }
     }
+  },
+
+  pricingByCourt: {
+    BT1: "R$ 80,50",
+    BT2: "R$ 80,50",
+    TN1: "R$ 120,00",
+    TN2: "R$ 120,00"
   },
 
   payments: {
@@ -150,11 +160,11 @@ window.CLIENT_CONFIG = {
     bookingPaymentTitle: "Forma de pagamento",
     bookingPixTitle: "PIX",
     bookingPixSubtitle: "Status pendente até confirmação do admin.",
-    bookingBillingTitle: "Faturamento",
-    bookingBillingSubtitle: "Pagamento no final do mês.",
+    bookingBillingTitle: "Lançar na conta da Cervejaria",
+    bookingBillingSubtitle: "-",
     bookingPixLabel: "Pagamento via PIX",
     bookingPixInstruction: "Envie o comprovante pelo WhatsApp.",
-    bookingBillingNotice: "Valor será lançado na sua conta. Pagamento no final do mês.",
+    bookingBillingNotice: "Sujeito a análise e aprovação pelos administradores",
     billingStatusText: "Pagamento no final do mês.",
     pixWhatsAppMessage:
       "Olá! Segue comprovante da reserva:\\nQuadra: {court}\\nData: {date}\\nHorário: {time}\\nValor: {amount}",

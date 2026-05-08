@@ -109,14 +109,14 @@ const DEFAULT_COPY = {
 };
 
 const DEFAULT_SETTINGS = {
-  pixKey: "",
+  pixKey: CLIENT_CONTACT.pixKey || "",
   whatsappPhoneNumber: CLIENT_CONTACT.whatsappPhoneNumber || "",
   pricingConfig: getDefaultPricingConfig(),
   pricingByCourt: {
-    BT1: formatCurrencyBRL(CLIENT_CONFIG.pricing?.byCourt?.BT1?.dayPrice ?? 80),
-    BT2: formatCurrencyBRL(CLIENT_CONFIG.pricing?.byCourt?.BT2?.dayPrice ?? 80),
-    TN1: formatCurrencyBRL(CLIENT_CONFIG.pricing?.byCourt?.TN1?.dayPrice ?? 100),
-    TN2: formatCurrencyBRL(CLIENT_CONFIG.pricing?.byCourt?.TN2?.dayPrice ?? 100),
+    BT1: String(CLIENT_CONFIG.pricingByCourt?.BT1 || formatCurrencyBRL(CLIENT_CONFIG.pricing?.byCourt?.BT1?.dayPrice ?? 80)),
+    BT2: String(CLIENT_CONFIG.pricingByCourt?.BT2 || formatCurrencyBRL(CLIENT_CONFIG.pricing?.byCourt?.BT2?.dayPrice ?? 80)),
+    TN1: String(CLIENT_CONFIG.pricingByCourt?.TN1 || formatCurrencyBRL(CLIENT_CONFIG.pricing?.byCourt?.TN1?.dayPrice ?? 100)),
+    TN2: String(CLIENT_CONFIG.pricingByCourt?.TN2 || formatCurrencyBRL(CLIENT_CONFIG.pricing?.byCourt?.TN2?.dayPrice ?? 100)),
   },
   openingStart: CLIENT_BUSINESS_HOURS.openingStart || "07:00",
   openingEnd: CLIENT_BUSINESS_HOURS.openingEnd || "22:00",
@@ -1905,7 +1905,7 @@ function fillConfigForm() {
 
 function getDefaultPricingConfig() {
   const pricingConfig = CLIENT_CONFIG.pricing || {};
-  const nightStart = pricingConfig.nightStart || "18:00";
+  const nightStart = pricingConfig.nightStartsAt || pricingConfig.nightStart || "18:00";
   const defaultPrice = parseCurrencyInput(pricingConfig.defaultPrice, NaN);
   const bt1Day = parseCurrencyInput(pricingConfig.byCourt?.BT1?.dayPrice, NaN);
   const bt1Night = parseCurrencyInput(pricingConfig.byCourt?.BT1?.nightPrice, NaN);
@@ -1921,7 +1921,7 @@ function getDefaultPricingConfig() {
       dayPrice: Number.isFinite(tn1Day) && tn1Day > 0 ? tn1Day : Number.isFinite(defaultPrice) && defaultPrice > 0 ? defaultPrice : 100,
       nightPrice: Number.isFinite(tn1Night) && tn1Night > 0 ? tn1Night : Number.isFinite(defaultPrice) && defaultPrice > 0 ? defaultPrice : 100,
     },
-    updatedAt: "",
+    updatedAt: String(pricingConfig.updatedAt || ""),
   };
 }
 
