@@ -1,24 +1,25 @@
 # Padrões Detectados
 
-> Atualizado em 2026-05-05.
+> Atualizado em 2026-05-08.
 
 ## Padrões de implementação
-- JavaScript puro com estado global (`state`) e mapa de elementos (`elements`).
-- Arquivo único principal (`app.js`) para regras, UI e integração.
-- Leitura de dados via `gviz/tq` com parsing próprio.
-- Escrita via `submitMutation` por actions do webhook.
-- Uso de `dialog` nativo para modais.
+- Estado global em `app.js` (`state` + `elements`).
+- UI, regra de negócio e integração concentradas em arquivo único JS.
+- Leitura de planilha via `gviz/tq` com parser próprio.
+- Escrita remota por `submitMutation(action, payload)`.
+- Modais com elemento nativo `dialog`.
 
 ## Padrões de domínio
-- Quadras fixas: `BT1`, `BT2`, `TN1`, `TN2`.
-- Status: `pendente`, `confirmado`, `faturado`, `bloqueado`.
+- Quadras padronizadas por IDs (`BT1`, `BT2`, `TN1`, `TN2`).
+- Status operacionais: `pendente`, `confirmado`, `faturado`, `bloqueado`.
 - Pagamento: `pix` e `faturamento`.
 
 ## Padrões operacionais
-- Sem build step; deploy de estáticos.
+- Deploy estático em GitHub Pages.
 - PWA com cache versionado manualmente.
-- Configuração operacional centralizada em aba `config` (Sheets).
+- Configuração híbrida: `config/637.config.js` + aba `config` do Sheets.
 
-## Anti-padrões relevantes
-- Segredos e controles de acesso no cliente.
-- Ausência de testes automatizados e de observabilidade real.
+## Anti-padrões
+- Controle admin e integrações sensíveis expostos no frontend.
+- Sem testes automatizados.
+- Sem trilha de auditoria para ações administrativas.

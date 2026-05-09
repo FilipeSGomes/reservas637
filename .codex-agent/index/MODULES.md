@@ -1,46 +1,43 @@
 # Inventário de Módulos Críticos
 
-> Atualizado em 2026-05-05 (descoberta incremental em modo leitura).
+> Atualizado em 2026-05-08.
 
 ## 1. Frontend Público (Reserva)
 - Arquivos: `index.html`, `app.js`, `styles.css`.
-- Função: agenda visual, pré-reserva, cadastro de cliente, escolha de pagamento, envio da solicitação.
-- Dados sensíveis: nome, telefone, CPF, observação.
+- Função: agenda visual, pré-reserva, cadastro (nome/telefone/CPF), escolha de pagamento e envio.
 - Criticidade: alta.
 
 ## 2. Painel Admin
 - Arquivos: `admin/index.html`, `app.js`.
-- Função: login por senha simples, confirmação PIX, bloqueio por faixa/dia, configuração de preços/textos/PIX/WhatsApp.
+- Função: autenticação simples, confirmação PIX, bloqueios, edição de configuração operacional.
 - Criticidade: crítica.
 
-## 3. Motor de Agenda e Regras Locais
+## 3. Motor de Agenda e Regras
 - Arquivo: `app.js`.
-- Função: leitura de `reservas` e `bloqueios`, cálculo de status, regra de disponibilidade, normalizações de data/hora/pagamento.
+- Função: compor disponibilidade por data/quadra/horário, estados visuais e validações de fluxo.
 - Criticidade: alta.
 
-## 4. Integração Google Sheets (Leitura)
+## 4. Integração de Leitura (Sheets)
 - Arquivo: `app.js`.
-- Função: leitura pública via `gviz/tq` das abas `reservas`, `bloqueios` e `config`.
+- Função: leitura `gviz/tq` das abas `reservas`, `bloqueios`, `config`.
 - Criticidade: alta.
 
-## 5. Integração Apps Script (Escrita)
+## 5. Integração de Escrita (Apps Script)
 - Arquivos: `app.js`, `google-sheets-template/apps-script.gs`.
 - Ações: `reservation:create`, `reservation:confirm`, `block:create`, `config:update`.
-- Função: persistência e validações server-side mínimas.
 - Criticidade: crítica.
 
-## 6. Persistência de Configuração Operacional
-- Arquivos: aba `config` no Sheets, `app.js`, `google-sheets-template/config.csv`.
-- Função: chave PIX, WhatsApp, horários de funcionamento, precificação e cópias de texto.
+## 6. Configuração de Cliente e Negócio
+- Arquivos: `config/637.config.js`, aba `config` (Sheets), `google-sheets-template/config.csv`.
+- Função: branding, contato, horários, preços, textos.
 - Criticidade: alta.
 
 ## 7. PWA e Cache
 - Arquivos: `manifest.webmanifest`, `sw.js`, `instalar.html`, `icons/*`.
-- Função: instalação e cache offline de app shell.
-- Estado observado: `CACHE_NAME = app-637-v4`.
+- Função: instalação e app shell offline.
 - Criticidade: média.
 
-## 8. Provisionamento
+## 8. Provisionamento/Template
 - Arquivos: `google-sheets-template/README.md`, `*.csv`, `apps-script.gs`.
-- Função: bootstrap de planilha e webhook.
+- Função: bootstrap de nova planilha + webhook.
 - Criticidade: média.

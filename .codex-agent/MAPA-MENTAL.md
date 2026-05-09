@@ -1,32 +1,31 @@
 # Mapa Mental Técnico
 
-> Atualizado em 2026-05-05.
+> Atualizado em 2026-05-08.
 
-## Núcleo do sistema
+## Núcleo
 Cliente web estático -> agenda -> pré-reserva -> cadastro -> pagamento -> webhook Apps Script -> Google Sheets.
 
-## Fluxos principais
+## Módulos
 - Reserva pública (`index.html` + `app.js`)
-- Administração (`/admin/` + `app.js`)
-- Configuração dinâmica (aba `config`)
-- Bloqueios de quadra (faixa e dia inteiro)
-- Confirmação PIX
-- PWA/cache (`sw.js`)
+- Painel admin (`admin/index.html` + `app.js`)
+- Configuração de cliente (`config/637.config.js`)
+- Configuração dinâmica de negócio (aba `config` no Sheets)
+- Bloqueios de horário/dia
+- PWA/cache (`manifest.webmanifest`, `sw.js`, `instalar.html`)
 
 ## Dependências externas
 - Google Sheets (`reservas`, `bloqueios`, `config`)
-- Apps Script Web App (`doPost`)
+- Google Apps Script (`reservation:create`, `reservation:confirm`, `block:create`, `config:update`)
 - WhatsApp (`wa.me`)
-- Bootstrap CDN
-- Google Fonts CDN
+- CDNs: Bootstrap e Google Fonts
 
 ## Acoplamentos críticos
-- Ordem das colunas nas abas
-- Nomes de actions do webhook
-- IDs do DOM usados por `app.js`
-- Estratégia/versionamento do service worker
+- Ordem/nomes de colunas nas abas
+- Contrato `{ action, payload }` do webhook
+- IDs do DOM referenciados em `app.js`
+- Versionamento de cache no `sw.js`
 
-## Pontos de risco
-- Segredos e endpoints no frontend
-- Validações críticas distribuídas entre cliente e Apps Script
-- Ausência de testes automatizados
+## Pontos de atenção
+- Controle admin no cliente (senha hardcoded)
+- Exposição de PII no fluxo/admin
+- Ausência de testes automatizados e de CI/CD

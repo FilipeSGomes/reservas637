@@ -1,57 +1,59 @@
 # README Técnico Vivo do Projeto
 
-> Atualizado em 2026-05-05.
+> Atualizado em 2026-05-08.
 
 ## Resumo
-Sistema estático de reserva de quadras da 637 Cervejaria, hospedado em GitHub Pages, com persistência via Google Sheets e Apps Script.
+Sistema estático de reserva de quadras da 637 Cervejaria em GitHub Pages, com persistência via Google Sheets (leitura `gviz/tq`) e Google Apps Script (escrita `POST`).
 
 ## Tecnologias detectadas
-- HTML5 (`index.html`, `instalar.html`, `admin/index.html`)
-- CSS3 (`styles.css`)
-- JavaScript ES6+ (`app.js`, `sw.js`)
+- HTML5: `index.html`, `admin/index.html`, `instalar.html`
+- CSS3: `styles.css`
+- JavaScript ES6+: `app.js`, `sw.js`, `config/637.config.js`
 - Bootstrap 5.3.0 via CDN
 - Google Fonts via CDN
-- PWA (`manifest.webmanifest` + service worker)
-- Google Sheets (`gviz/tq`) + Apps Script (`doPost`)
+- PWA: `manifest.webmanifest` + service worker
+- Google Sheets + Apps Script
 
 ## Frameworks e versões
-- Bootstrap `5.3.0` (CDN)
-- Sem bundler, sem npm, sem framework SPA
+- Bootstrap `5.3.0`
+- Sem npm, sem bundler, sem framework SPA
 
 ## Banco e ORM
-- Banco: Google Sheets (abas `reservas`, `bloqueios`, `config`)
+- Banco: Google Sheets (`reservas`, `bloqueios`, `config`)
 - ORM: não aplicável
 
 ## Entrypoints e execução
 - Público: `index.html`
-- Instalação: `instalar.html`
 - Admin: `admin/index.html`
+- Página de instalação: `instalar.html`
 - Lógica principal: `app.js`
-- Cache/PWA: `sw.js`
+- Configuração de cliente: `config/637.config.js`
 
-## Build, teste e execução
+## Build, testes e execução
 - Build: inexistente
 - Testes automatizados: não detectados
-- Scripts de execução: não detectados
+- Scripts de execução local: não detectados
 
 ## CI/CD e deploy
-- CI/CD: não detectado (`.github/` ausente)
-- Deploy: GitHub Pages + `CNAME`
+- CI/CD: não detectado (`.github/workflows` ausente)
+- Deploy: GitHub Pages com `CNAME` (`637.fisamtech.com`)
 
 ## Integrações externas
 - Google Sheets público (leitura)
-- Google Apps Script (escrita)
-- WhatsApp link (`wa.me`) para comprovante PIX
-- CDNs (Bootstrap e Google Fonts)
+- Google Apps Script Web App (escrita)
+- WhatsApp (`wa.me`)
+- Bootstrap CDN
+- Google Fonts CDN
 
-## Configuração de ambiente detectada
-- Não há `.env*` detectado
-- Configuração em `APP_CONFIG` no `app.js`
+## Configuração de ambiente
+- Não há `.env` / `.env.example`
+- Configuração operacional concentrada em `config/637.config.js` e na aba `config` do Sheets
 
 ## Sensibilidade de dados
-- Coleta/processa PII: nome, telefone, CPF
-- Exposição de dados no admin (inclusive CPF em lista)
+- Coleta/processamento de PII: nome, telefone, CPF
+- Painel admin exibe PII de reservas
+- Existe fallback local (`localStorage`) para contingência
 
 ## Observabilidade
-- Apenas mensagens de UI e `console.error`
-- Sem métricas, tracing, logs centralizados ou auditoria
+- Mensagens de UI + `console.error`
+- Sem métricas, tracing, logs de auditoria centralizados

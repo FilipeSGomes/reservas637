@@ -180,3 +180,17 @@
   5. `legend-chip` com quebra controlada em 2 colunas e 1 coluna <=390px.
   6. Botão principal do card de próximo horário com margem segura inferior.
 - **Impacto funcional**: nenhum (sem alteração de regra de reserva/preço/status).
+
+## 2026-05-08 — Prompt 00: Descoberta inicial (rodada atual)
+
+- **Operador**: Codex
+- **Modo**: somente leitura para runtime/código-fonte; escrita apenas em `.codex-agent/`.
+- **Ação**: amostragem técnica orientada por scan + validação de entrypoints, configuração, PWA, integração Sheets/Apps Script e documentação viva.
+- **Arquivos lidos**: `.codex-agent/PROJECT-CONTEXT.md`, `.codex-agent/AGENTS.md`, `.codex-agent/index/PROJECT-SCAN.md`, `README.md`, `AGENTS.md`, `README-agents.md`, `index.html`, `admin/index.html`, `instalar.html`, `app.js`, `styles.css`, `manifest.webmanifest`, `sw.js`, `config/637.config.js`, `google-sheets-template/README.md`, `google-sheets-template/apps-script.gs`, `CNAME`.
+- **Principais achados**:
+  1. Stack estática confirmada (HTML/CSS/JS + Bootstrap CDN + PWA).
+  2. Sem testes automatizados, sem CI/CD e sem observabilidade operacional.
+  3. Segredos/dados sensíveis detectados (existência registrada sem valores).
+  4. Divergências entre documentação e configuração operacional (arquivos e horário).
+- **Memória atualizada**: `README-PROJETO.md`, `MAPA-MENTAL.md`, `RISCOS.md`, `GAPS.md`, `DECISOES.md`, `PADROES.md`, `SCORECARD.md`, `index/MODULES.md`, novos prompts incrementais.
+- **Código-fonte alterado**: não.

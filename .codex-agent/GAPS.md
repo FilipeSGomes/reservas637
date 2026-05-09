@@ -1,27 +1,25 @@
 # Gaps do Projeto
 
-> Atualizado em 2026-05-05.
+> Atualizado em 2026-05-08.
 
 ## Testes
-- Não há testes unitários/integrados/E2E.
-- Não há suíte de regressão para fluxo reserva -> planilha -> admin.
+- Não há testes unitários, integração ou E2E.
+- Não há roteiro de regressão automatizada para fluxo reserva -> sheets -> admin.
 
 ## Segurança e dados
-- Falta política LGPD operacional (finalidade, retenção, exclusão, acesso).
-- Falta política de rotação de senha admin e resposta a incidente.
-- Falta mascaramento de CPF no painel admin por padrão.
+- Falta política documentada de LGPD para CPF/telefone.
+- Falta estratégia de rotação da senha admin.
+- Falta mascaramento padrão de CPF/telefone no admin.
 
 ## Operação
-- Falta runbook de deploy e rollback no GitHub Pages.
-- Falta checklist formal para atualização de `CACHE_NAME` e invalidação PWA.
-- Falta procedimento documentado para publicação/versão do Apps Script.
+- Sem runbook formal de deploy/rollback GitHub Pages + Apps Script.
+- Sem checklist formal de invalidação/versionamento de cache PWA.
+- Sem procedimento versionado para publicação e auditoria de Apps Script.
 
 ## Qualidade técnica
-- `app.js` centraliza responsabilidades em excesso.
-- Falta documentação de contrato de erro/resposta do webhook para suporte.
+- `PROJECT-SCAN.md` está truncado/incompleto e não lista os arquivos de configuração corretamente.
+- Divergência documental: `AGENTS.md` menciona `style.css`/`manifest.json`, mas código usa `styles.css`/`manifest.webmanifest`.
+- Divergência de regras: `AGENTS.md` exige horário 07h–22h, enquanto `config/637.config.js` define 06h–20h.
 
 ## Observabilidade
-- Falta telemetria mínima de erro e trilha auditável de ações admin.
-
-- Persistência de `copy.*` no `config:update` está incompleta: payload recebido não é escrito de volta na aba `config` para chaves novas/alteradas.
-- Admin possui duas fontes de configuração de preço (`pricingByCourt` e `pricingConfig`) sem regra única de precedência.
+- Sem métricas de erro, sem logs de auditoria admin e sem alerta de falhas de webhook.
