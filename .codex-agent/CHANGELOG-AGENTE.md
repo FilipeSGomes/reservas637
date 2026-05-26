@@ -18,6 +18,13 @@
 - **Governance atualizado**: MAPA-MENTAL.md, GAPS.md e DECISOES.md passaram a refletir a direcao multi-cliente, gaps de backend/tenant/admin e decisao de tratar Next.js + PostgreSQL como SaaS v1.
 - **Complemento**: criado PLANO-EXECUCAO-SAAS.md com fases A-D, matriz de prioridade, arquitetura alvo, modelo de dados inicial e decisoes em aberto.
 
+## 2026-05-26 - Plano solo founder para SaaS
+
+- **Operador**: Codex/OpenClaw
+- **Modo**: planejamento comercial/tecnico, sem alteracao de runtime.
+- **Mudanca aplicada**: criado PLANO-SOLO-FOUNDER-SAAS.md para orientar venda, implantacao assistida, limites de promessa, backlog P0/P1/P2 e gatilhos reais para iniciar Next.js + PostgreSQL.
+- **Governance atualizado**: GAPS.md e DECISOES.md passaram a registrar o risco comercial de vender instabilidade como SaaS maduro e a decisao de posicionar primeiros clientes como implantacao assistida.
+
 > Registro cronológico de sessões de análise e alterações.
 > Atualizar ao final de TODA execução, mesmo sem alteração de código.
 

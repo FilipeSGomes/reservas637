@@ -128,6 +128,8 @@ SaaS de Reservas
 
 O detalhamento de fases, prioridades e criterios de pronto esta em PLANO-EXECUCAO-SAAS.md.
 
+O recorte pragmatico para uma pessoa so vender, implantar e evoluir esta em PLANO-SOLO-FOUNDER-SAAS.md.
+
 ## Decisoes propostas
 
 - Nao reescrever antes da reuniao.

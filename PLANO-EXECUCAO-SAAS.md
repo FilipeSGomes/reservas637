@@ -9,6 +9,8 @@ Este plano organiza a evolucao do sistema em fases. A regra central e simples: v
 - Google Sheets/Apps Script pode sustentar piloto, mas nao deve ser vendido como arquitetura final.
 - Next.js + PostgreSQL entra como SaaS v1, com migracao planejada.
 - Toda mudanca relevante deve passar pelo FISAM governance: gap, decisao, contrato, validacao.
+- Como Filipe esta tocando sozinho, priorizar escopo vendavel e repetivel antes de arquitetura ideal.
+- Primeiros clientes devem ser tratados como implantacao assistida, nao self-service maduro.
 
 ## Fase A - Comercial e piloto rapido
 
@@ -182,3 +184,7 @@ Criterio de pronto:
 4. Abrir contratos FISAM para gaps P0/P1.
 5. Decidir stack do SaaS v1.
 6. Criar branch/projeto Next.js somente depois de confirmar demanda.
+
+## Plano solo founder
+
+O plano operacional para vender sem mascarar instabilidade esta em PLANO-SOLO-FOUNDER-SAAS.md.

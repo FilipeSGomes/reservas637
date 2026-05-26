@@ -11,6 +11,8 @@
 - [CONFIRMADO] Branch `feature/microSaas` possui kit inicial multi-cliente por registry/loader/config.
 - [CONFIRMADO] Main deve permanecer como demonstracao estavel para a reuniao comercial.
 - [CONFIRMADO] Next.js + PostgreSQL e direcao tecnica desejada para SaaS real, mas nao deve bloquear piloto/comercial.
+- [CONFIRMADO] Primeiros clientes devem ser tratados como implantacao assistida enquanto a plataforma SaaS real nao estiver pronta.
+- [CONFIRMADO] Escopo comercial deve evitar prometer self-service, SLA alto, integracoes complexas e relatorios avancados no piloto.
 
 ## Hipóteses
 - [HIPÓTESE] Apps Script em produção está alinhado ao arquivo `google-sheets-template/apps-script.gs` atual.
