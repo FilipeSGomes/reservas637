@@ -16,6 +16,7 @@
 - **Modo**: planejamento/produto dentro do FISAM governance.
 - **Mudanca aplicada**: criado SAAS-PLANEJAMENTO.md com mapa mental, gaps, backlog por fase, decisoes propostas e criterios de sucesso para transformar o sistema em SaaS real.
 - **Governance atualizado**: MAPA-MENTAL.md, GAPS.md e DECISOES.md passaram a refletir a direcao multi-cliente, gaps de backend/tenant/admin e decisao de tratar Next.js + PostgreSQL como SaaS v1.
+- **Complemento**: criado PLANO-EXECUCAO-SAAS.md com fases A-D, matriz de prioridade, arquitetura alvo, modelo de dados inicial e decisoes em aberto.
 
 > Registro cronológico de sessões de análise e alterações.
 > Atualizar ao final de TODA execução, mesmo sem alteração de código.

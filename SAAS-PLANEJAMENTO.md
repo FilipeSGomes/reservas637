@@ -124,6 +124,10 @@ SaaS de Reservas
 4. Relatorios.
 5. Observabilidade e suporte.
 
+## Plano operacional
+
+O detalhamento de fases, prioridades e criterios de pronto esta em PLANO-EXECUCAO-SAAS.md.
+
 ## Decisoes propostas
 
 - Nao reescrever antes da reuniao.
