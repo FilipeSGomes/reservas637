@@ -9,6 +9,7 @@ const CLIENT_BUSINESS_HOURS = CLIENT_CONFIG.businessHours || {};
 const CLIENT_STATUS = CLIENT_CONFIG.statuses || {};
 const CLIENT_BRANDING = CLIENT_CONFIG.branding || {};
 const CLIENT_CONTACT = CLIENT_CONFIG.contact || {};
+const CLIENT_ID = String(CLIENT_CONFIG.client?.id || window.SELECTED_CLIENT_ID || "637").trim() || "637";
 
 const APP_CONFIG = {
   googleSheetsApiKey:
@@ -60,7 +61,7 @@ const SETTINGS_STORAGE_KEY = CLIENT_STORAGE.configCacheKey || "quadras-admin-set
 const FULL_DAY_BLOCK_SENTINEL = "__FULL_DAY__";
 const ADMIN_AUTH_STORAGE_KEY = CLIENT_ADMIN.authStorageKey || "quadras-admin-auth";
 const LAST_BOOKING_CONTACT_KEY = CLIENT_STORAGE.lastContactKey || "quadras-last-booking-contact";
-const SETTINGS_BROADCAST_CHANNEL = "quadras-settings";
+const SETTINGS_BROADCAST_CHANNEL = `quadras-settings-${CLIENT_ID}`;
 
 const DEFAULT_COPY = {
   heroEyebrow: CLIENT_TEXTS.heroEyebrow || "637 Cervejaria • Desde 2017",
@@ -68,6 +69,13 @@ const DEFAULT_COPY = {
   heroCopy:
     CLIENT_TEXTS.heroCopy ||
     "Consulte a agenda do dia, escolha sua quadra e envie sua solicitação em menos de um minuto.",
+  adminHeroEyebrow:
+    CLIENT_TEXTS.adminHeroEyebrow ||
+    ((CLIENT_CONFIG.client?.name || "637 Cervejaria") + " • Administração"),
+  adminHeroTitle: CLIENT_TEXTS.adminHeroTitle || "Painel administrativo das quadras.",
+  adminHeroCopy:
+    CLIENT_TEXTS.adminHeroCopy ||
+    "Acesso restrito para gestão de reservas, bloqueios e configurações.",
   heroPrimaryCta: CLIENT_TEXTS.heroPrimaryCta || "Reservar quadra",
   installCta: CLIENT_TEXTS.installCta || "Adicionar à tela inicial",
   whatsappClassCta: CLIENT_TEXTS.whatsappClassCta || "Reserve sua aula",
@@ -297,9 +305,10 @@ function applyClientBranding() {
     }
   }
 
-  if (elements.heroEyebrow) elements.heroEyebrow.textContent = copy.heroEyebrow;
-  if (elements.heroTitle) elements.heroTitle.textContent = copy.heroTitle;
-  if (elements.heroCopy) elements.heroCopy.textContent = copy.heroCopy;
+  const adminRoute = isAdminRoute();
+  if (elements.heroEyebrow) elements.heroEyebrow.textContent = adminRoute ? copy.adminHeroEyebrow : copy.heroEyebrow;
+  if (elements.heroTitle) elements.heroTitle.textContent = adminRoute ? copy.adminHeroTitle : copy.heroTitle;
+  if (elements.heroCopy) elements.heroCopy.textContent = adminRoute ? copy.adminHeroCopy : copy.heroCopy;
   if (elements.heroPrimaryCta) elements.heroPrimaryCta.textContent = copy.heroPrimaryCta;
   if (elements.installCta) elements.installCta.textContent = copy.installCta;
   if (elements.whatsappClassButton) {

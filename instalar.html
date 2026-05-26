@@ -66,7 +66,8 @@
         </section>
       </main>
     </div>
-    <script src="config/637.config.js"></script>
+    <script src="config/clients.js"></script>
+    <script src="config/config-loader.js"></script>
     <script>
       (function () {
         var cfg = window.CLIENT_CONFIG || {};
@@ -109,7 +110,12 @@
             texts.installDescription || "Acesse a reserva de quadras direto pela tela inicial do celular.";
         }
         var backEl = document.querySelector("#install-back-link");
-        if (backEl) backEl.textContent = texts.installBackLink || "Voltar para reservas";
+        if (backEl) {
+          backEl.textContent = texts.installBackLink || "Voltar para reservas";
+          if (window.SELECTED_CLIENT_ID && window.SELECTED_CLIENT_ID !== "637") {
+            backEl.setAttribute("href", "index.html?client=" + encodeURIComponent(window.SELECTED_CLIENT_ID));
+          }
+        }
       })();
     </script>
   </body>

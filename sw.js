@@ -1,11 +1,14 @@
-const CACHE_NAME = "app-637-v5-config";
+const CACHE_NAME = "app-637-v6-multiclient";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./instalar.html",
   "./styles.css",
   "./app.js",
+  "./config/clients.js",
+  "./config/config-loader.js",
   "./config/637.config.js",
+  "./config/demo.config.js",
   "./manifest.webmanifest",
   "./images/perfil637.jpg",
   "./icons/favicon-32.png",

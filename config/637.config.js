@@ -139,6 +139,9 @@ window.CLIENT_CONFIG = {
     heroTitle: "Tênis, Beach Tennis e cerveja artesanal no mesmo lugar.",
     heroCopy:
       "Consulte a agenda do dia, escolha sua quadra e envie sua solicitação em menos de um minuto.",
+    adminHeroEyebrow: "637 Cervejaria • Administração",
+    adminHeroTitle: "Painel administrativo das quadras.",
+    adminHeroCopy: "Acesso restrito para gestão de reservas, bloqueios e configurações.",
     heroPrimaryCta: "Reservar quadra",
     installCta: "Adicionar à tela inicial",
     whatsappClassCta: "Reserve sua aula",

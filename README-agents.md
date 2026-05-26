@@ -138,6 +138,19 @@ Em `APP_CONFIG` dentro de `app.js`:
 - `appsScriptWebhookUrl` aponta para o Apps Script
 - `adminPassword` é a senha do admin
 
+## Configuracao multi-cliente
+
+Na branch feature/microSaas, a configuracao tambem pode vir de arquivos por cliente:
+
+- config/clients.js registra clientes e hostnames.
+- config/config-loader.js escolhe a configuracao antes de app.js.
+- config/637.config.js e a configuracao real da 637.
+- config/demo.config.js e um segundo cliente demonstrativo.
+- config/_client-template.config.js e o template para onboarding de novo cliente.
+- MULTICLIENTE.md descreve como operar e criar novos clientes.
+- GO-LIVE-NOVO-CLIENTE.md concentra o checklist de implantacao rapida.
+- NEXTJS-DB-ROADMAP.md registra a proposta de migracao para Next.js + PostgreSQL.
+
 ## Fallback local
 
 O sistema grava em `localStorage`:

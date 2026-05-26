@@ -1,5 +1,15 @@
 # Changelog do Agente
 
+## 2026-05-26 - Base multi-cliente para reuniao comercial
+
+- **Operador**: Codex/OpenClaw
+- **Branch**: feature/microSaas
+- **Contrato**: .codex-agent/contracts/006-multicliente-config-loader.md
+- **Mudanca aplicada**: criado registry de clientes e loader de configuracao para selecionar cliente por query string, localStorage ou hostname; adicionado config/demo.config.js como segundo cliente demonstrativo; admin e pagina de instalacao passaram a carregar a configuracao selecionada; service worker atualizado para cachear loader/configs.
+- **Documentacao criada**: MULTICLIENTE.md com operacao atual para dois clientes e NEXTJS-DB-ROADMAP.md com plano de migracao para Next.js + PostgreSQL.
+- **Validacao tecnica**: node --check em app.js, sw.js, config/clients.js, config/config-loader.js e config/demo.config.js.
+- **Complemento de implantacao**: criado config/_client-template.config.js e GO-LIVE-NOVO-CLIENTE.md para acelerar onboarding quando o comercial fechar novo cliente.
+
 > Registro cronológico de sessões de análise e alterações.
 > Atualizar ao final de TODA execução, mesmo sem alteração de código.
 
