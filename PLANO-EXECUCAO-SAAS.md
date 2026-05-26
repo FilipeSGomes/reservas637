@@ -21,6 +21,7 @@ Escopo:
 - Config por cliente.
 - Planilha e Apps Script por cliente.
 - Dominio/subdominio por cliente.
+- Tenant resolvido por subdominio em producao.
 - Publico e admin parametrizados.
 - Checklist de go-live.
 - Roteiro manual de validacao.
@@ -29,6 +30,7 @@ Entregaveis:
 
 - Cliente criado em config/cliente.config.js.
 - Cliente registrado em config/clients.js.
+- Subdominio registrado em hostnameMap.
 - Planilha criada a partir do template.
 - Apps Script publicado.
 - Admin validado.

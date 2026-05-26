@@ -7,6 +7,7 @@ Use este checklist quando o comercial fechar um novo cliente.
 - Nome publico do cliente
 - Nome curto
 - Dominio ou subdominio desejado
+- Slug do subdominio em fisamtech.com
 - WhatsApp de atendimento
 - Chave PIX
 - Horario de funcionamento
@@ -25,6 +26,7 @@ Use este checklist quando o comercial fechar um novo cliente.
 5. Trocar a senha admin antes do go-live.
 6. Registrar o cliente em config/clients.js.
 7. Se tiver dominio, registrar o hostname em hostnameMap.
+8. Para subdominio FISAM, criar/validar DNS como cliente.fisamtech.com.
 
 ## 3. Preparar Google Sheets e Apps Script
 
@@ -53,6 +55,7 @@ Use este checklist quando o comercial fechar um novo cliente.
 
 - Apontar dominio/subdominio.
 - Conferir que hostname carrega o cliente certo sem query string.
+- Conferir que o subdominio oficial carrega o cliente certo sem query string.
 - Fazer uma reserva real assistida.
 - Validar se caiu na planilha correta.
 - Remover dados de teste ou marcar como teste/cancelado.
@@ -62,3 +65,7 @@ Use este checklist quando o comercial fechar um novo cliente.
 - Registrar pendencias no FISAM governance.
 - Atualizar README/agente com particularidades do cliente.
 - Planejar migracao para Next.js + PostgreSQL se o cliente exigir login, multiunidade, auditoria forte ou volume maior.
+
+## Euphoria
+
+O tenant tecnico euphoria ja existe para euphoria.fisamtech.com, mas permanece em modo piloto/local ate preencher WhatsApp, PIX, horarios, precos, planilha e webhook reais.

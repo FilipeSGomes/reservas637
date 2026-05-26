@@ -25,6 +25,14 @@
 - **Mudanca aplicada**: criado PLANO-SOLO-FOUNDER-SAAS.md para orientar venda, implantacao assistida, limites de promessa, backlog P0/P1/P2 e gatilhos reais para iniciar Next.js + PostgreSQL.
 - **Governance atualizado**: GAPS.md e DECISOES.md passaram a registrar o risco comercial de vender uma base estavel como se ja fosse SaaS self-service maduro e a decisao de posicionar primeiros clientes como implantacao assistida.
 
+## 2026-05-26 - Contratos de subdominio por tenant
+
+- **Operador**: Codex/OpenClaw
+- **Modo**: FISAM governance, planejamento/contratos.
+- **Contratos criados**: 007 roteamento por subdominio para tenant; 008 onboarding do cliente Euphoria; 009 arquitetura SaaS com subdominios no Next.js.
+- **Decisao registrada**: producao deve resolver tenant por subdominio, como 637.fisamtech.com e euphoria.fisamtech.com.
+- **Implementacao inicial**: config-loader passou a priorizar hostname/subdominio; euphoria.fisamtech.com foi registrado em config/clients.js; criado config/euphoria.config.js em modo piloto/local, sem dados reais de planilha/webhook.
+
 > Registro cronológico de sessões de análise e alterações.
 > Atualizar ao final de TODA execução, mesmo sem alteração de código.
 

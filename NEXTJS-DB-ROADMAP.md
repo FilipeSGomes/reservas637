@@ -12,6 +12,7 @@ Usar Next.js faz sentido para transformar o produto em microSaaS real:
 - banco relacional
 - isolamento por tenant
 - deploy com preview por branch
+- tenant resolvido por subdominio/host
 
 Banco recomendado para a primeira versao: PostgreSQL.
 
@@ -54,6 +55,7 @@ Manter adaptador de importacao/exportacao Google Sheets para transicao.
 Modelo inicial:
 
 - tenants
+- tenant_domains
 - tenant_settings
 - courts
 - reservations
@@ -64,6 +66,7 @@ Modelo inicial:
 Regras importantes:
 
 - toda query filtrada por tenant_id
+- tenant resolvido pelo host da requisicao, nunca apenas por parametro do cliente
 - status e pagamento normalizados
 - reserva com snapshot de preco
 - auditoria para confirmacao, bloqueio e alteracao de configuracao

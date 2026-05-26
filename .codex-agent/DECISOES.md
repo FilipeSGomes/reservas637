@@ -13,6 +13,7 @@
 - [CONFIRMADO] Next.js + PostgreSQL e direcao tecnica desejada para SaaS real, mas nao deve bloquear piloto/comercial.
 - [CONFIRMADO] Primeiros clientes devem ser tratados como implantacao assistida enquanto a plataforma SaaS real nao estiver pronta.
 - [CONFIRMADO] Escopo comercial deve evitar prometer self-service, SLA alto, integracoes complexas e relatorios avancados no piloto.
+- [CONFIRMADO] O tenant de producao deve ser resolvido por subdominio: 637.fisamtech.com, euphoria.fisamtech.com e futuros clientes em subdominios proprios.
 
 ## Hipóteses
 - [HIPÓTESE] Apps Script em produção está alinhado ao arquivo `google-sheets-template/apps-script.gs` atual.

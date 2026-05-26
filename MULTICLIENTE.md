@@ -5,22 +5,27 @@ Este projeto agora suporta mais de um cliente sem duplicar o frontend.
 ## Como selecionar cliente
 
 - Producao 637: https://637.fisamtech.com
+- Piloto Euphoria: https://euphoria.fisamtech.com
 - Demo segundo cliente: index.html?client=demo
 - Admin demo: admin/?client=demo
 - Instalacao demo: instalar.html?client=demo
 
-O loader usa esta prioridade:
+Em producao, o tenant deve ser definido pelo subdominio. O loader usa esta prioridade:
 
-1. Query string client
-2. Mapa de hostname em config/clients.js
-3. Cliente salvo em localStorage
-4. Cliente padrao 637
+1. Mapa de hostname em config/clients.js
+2. Subdominio fisamtech.com quando houver cliente registrado
+3. Query string client apenas em localhost/preview
+4. Cliente salvo em localStorage
+5. Cliente padrao 637
+
+Regra de produto: subdominio conhecido sempre vence configuracao salva no navegador. Isso evita que um teste em client=demo contamine a abertura de um dominio real.
 
 ## Arquivos de configuracao
 
 - config/clients.js: registry de clientes, aliases por hostname e arquivo de config.
 - config/637.config.js: configuracao real da 637 Cervejaria.
 - config/demo.config.js: segundo cliente demonstrativo, sem Sheets/Webhook, usando modo local.
+- config/euphoria.config.js: tenant inicial do Espaco Euphoria em modo piloto/local ate preencher dados reais.
 - config/_client-template.config.js: base para abrir um cliente novo rapidamente.
 - config/config-loader.js: carrega a configuracao correta antes de app.js.
 

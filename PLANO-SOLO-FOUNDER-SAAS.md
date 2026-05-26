@@ -23,6 +23,7 @@ Vender:
 - pagamento PIX/faturamento
 - painel admin para confirmacao e bloqueios
 - personalizacao por cliente
+- subdominio por cliente
 - implantacao assistida
 
 Nao vender ainda:
@@ -193,6 +194,7 @@ Perguntar:
 - Precisa faturamento/mensalista?
 - Usa WhatsApp como canal oficial?
 - Quer dominio proprio?
+- Qual subdominio deseja em fisamtech.com?
 - Qual dor principal: agenda, pagamento, organizacao ou atendimento?
 
 Validar expectativa:

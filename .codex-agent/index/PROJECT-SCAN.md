@@ -1,15 +1,15 @@
 # PROJECT-SCAN.md — Mapa Estrutural do Projeto
 
-> Gerado automaticamente por scan-project.sh em 2026-05-26 15:00:01
+> Gerado automaticamente por scan-project.sh em 2026-05-26 15:10:29
 > NÃO edite manualmente. Regenere com: ./.codex-agent/scripts/scan-project.sh
 
 ## Visão Geral
 
 | Métrica       | Valor          |
 |---------------|----------------|
-| Total arquivos | 37  |
-| Total pastas   | 9   |
-| Tamanho aprox  | 740K   |
+| Total arquivos | 39  |
+| Total pastas   | 10   |
+| Tamanho aprox  | 760K   |
 
 ### Classificação de Tamanho
 
@@ -26,12 +26,13 @@
 | Extensão | Quantidade | Relevância |
 |----------|:----------:|-----------|
 | `.md` | 12 | Markdown — documentação |
-| `.js` | 7 | JavaScript — runtime |
+| `.js` | 8 | JavaScript — runtime |
 | `.png` | 4 | — |
 | `.csv` | 4 | — |
 | `.html` | 3 | HTML — frontend |
 | `.webmanifest` | 1 | — |
 | `.svg` | 1 | — |
+| `.pyc` | 1 | — |
 | `.py` | 1 | Python — runtime |
 | `.jpg` | 1 | — |
 | `.gs` | 1 | — |
@@ -43,6 +44,7 @@
 .
 ./.codex
 ./.codex/prompts
+./__pycache__
 ./admin
 ./config
 ./data

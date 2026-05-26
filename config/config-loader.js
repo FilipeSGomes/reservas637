@@ -21,12 +21,43 @@
   function getHostnameClientId() {
     var hostnameMap = registry.hostnameMap || {};
     var hostname = window.location.hostname || "";
-    return hostnameMap[hostname] || "";
+    if (hostnameMap[hostname]) {
+      return hostnameMap[hostname];
+    }
+
+    if (hostname.endsWith(".fisamtech.com")) {
+      var subdomain = normalizeClientId(hostname.replace(".fisamtech.com", "").split(".").shift());
+      if (clients[subdomain]) {
+        return subdomain;
+      }
+    }
+
+    return "";
+  }
+
+  function isKnownTenantDomain() {
+    var hostname = window.location.hostname || "";
+    if (!hostname.endsWith(".fisamtech.com")) {
+      return true;
+    }
+
+    return Boolean(getHostnameClientId());
+  }
+
+  function isLocalPreviewHost() {
+    var hostname = window.location.hostname || "";
+    return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "";
+  }
+
+  var hostnameClientId = getHostnameClientId();
+
+  if (!isKnownTenantDomain()) {
+    throw new Error("Subdominio de cliente nao cadastrado.");
   }
 
   var selectedClientId = normalizeClientId(
-    requestedClientId ||
-      getHostnameClientId() ||
+    hostnameClientId ||
+      (isLocalPreviewHost() ? requestedClientId : "") ||
       storedClientId ||
       registry.defaultClientId ||
       "637"

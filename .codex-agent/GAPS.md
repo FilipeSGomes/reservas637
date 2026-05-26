@@ -11,6 +11,7 @@
 - Nao ha onboarding assistido para criar cliente novo sem mexer no repo.
 - PWA/manifest ainda e compartilhado e nao totalmente parametrizado por tenant.
 - Dados ainda dependem de Google Sheets/Apps Script por cliente.
+- Roteamento por subdominio precisa de contrato/validacao para evitar fallback silencioso em tenant errado.
 - Risco comercial: vender a base estavel atual como se ja fosse SaaS self-service maduro, quando ainda deve ser posicionada como implantacao assistida.
 - Risco operacional: uma pessoa so precisa limitar customizacoes, suporte e promessas de SLA.
 

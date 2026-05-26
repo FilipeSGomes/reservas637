@@ -9,6 +9,7 @@ const APP_SHELL = [
   "./config/config-loader.js",
   "./config/637.config.js",
   "./config/demo.config.js",
+  "./config/euphoria.config.js",
   "./manifest.webmanifest",
   "./images/perfil637.jpg",
   "./icons/favicon-32.png",

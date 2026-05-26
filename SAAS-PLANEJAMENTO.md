@@ -12,6 +12,7 @@ O produto deve resolver a operacao diaria de arenas, clubes e quadras:
 - bloqueios, aulas, eventos e manutencao
 - configuracao por cliente sem mexer em codigo
 - dados isolados por cliente
+- subdominio por cliente como rota oficial de tenant
 - caminho de implantacao em horas, nao semanas
 
 ## Visao em camadas
@@ -57,7 +58,7 @@ Estado desejado para crescer:
 ## Mapa mental do SaaS
 
 SaaS de Reservas
-- Tenant: marca, dominio, horarios, politicas, configuracoes comerciais
+- Tenant: marca, subdominio/dominio, horarios, politicas, configuracoes comerciais
 - Agenda: quadras, horarios, bloqueios, aulas, eventos
 - Reserva: cliente final, contato, documento, status, pagamento, snapshot de preco
 - Admin: reservas do dia, confirmar pagamento, bloquear horario, configurar textos/precos, auditoria
