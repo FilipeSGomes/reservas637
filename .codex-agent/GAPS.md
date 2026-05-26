@@ -1,6 +1,16 @@
 # Gaps do Projeto
 
-> Atualizado em 2026-05-08.
+> Atualizado em 2026-05-26.
+
+## SaaS e multi-cliente
+- Modelo atual permite multi-cliente por arquivo de configuracao, mas ainda nao ha isolamento de tenant em backend.
+- Configuracao de cliente ainda exige commit/deploy para alteracoes estruturais.
+- Admin continua com senha simples exposta no frontend.
+- Nao ha usuarios, papeis ou permissoes por cliente.
+- Nao ha auditoria centralizada de acoes administrativas.
+- Nao ha onboarding assistido para criar cliente novo sem mexer no repo.
+- PWA/manifest ainda e compartilhado e nao totalmente parametrizado por tenant.
+- Dados ainda dependem de Google Sheets/Apps Script por cliente.
 
 ## Testes
 - Não há testes unitários, integração ou E2E.

@@ -10,6 +10,13 @@
 - **Validacao tecnica**: node --check em app.js, sw.js, config/clients.js, config/config-loader.js e config/demo.config.js.
 - **Complemento de implantacao**: criado config/_client-template.config.js e GO-LIVE-NOVO-CLIENTE.md para acelerar onboarding quando o comercial fechar novo cliente.
 
+## 2026-05-26 - Planejamento para SaaS real
+
+- **Operador**: Codex/OpenClaw
+- **Modo**: planejamento/produto dentro do FISAM governance.
+- **Mudanca aplicada**: criado SAAS-PLANEJAMENTO.md com mapa mental, gaps, backlog por fase, decisoes propostas e criterios de sucesso para transformar o sistema em SaaS real.
+- **Governance atualizado**: MAPA-MENTAL.md, GAPS.md e DECISOES.md passaram a refletir a direcao multi-cliente, gaps de backend/tenant/admin e decisao de tratar Next.js + PostgreSQL como SaaS v1.
+
 > Registro cronológico de sessões de análise e alterações.
 > Atualizar ao final de TODA execução, mesmo sem alteração de código.
 
