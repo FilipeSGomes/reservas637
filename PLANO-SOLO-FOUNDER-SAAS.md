@@ -171,7 +171,7 @@ Evitar no inicio:
 
 ## Modelo comercial inicial
 
-Para nao vender instabilidade como maturidade:
+Para vender uma base estavel sem prometer maturidade de plataforma que ainda esta em evolucao:
 
 - cobrar taxa de implantacao
 - cobrar mensalidade menor no piloto

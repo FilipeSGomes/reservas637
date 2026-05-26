@@ -23,7 +23,7 @@
 - **Operador**: Codex/OpenClaw
 - **Modo**: planejamento comercial/tecnico, sem alteracao de runtime.
 - **Mudanca aplicada**: criado PLANO-SOLO-FOUNDER-SAAS.md para orientar venda, implantacao assistida, limites de promessa, backlog P0/P1/P2 e gatilhos reais para iniciar Next.js + PostgreSQL.
-- **Governance atualizado**: GAPS.md e DECISOES.md passaram a registrar o risco comercial de vender instabilidade como SaaS maduro e a decisao de posicionar primeiros clientes como implantacao assistida.
+- **Governance atualizado**: GAPS.md e DECISOES.md passaram a registrar o risco comercial de vender uma base estavel como se ja fosse SaaS self-service maduro e a decisao de posicionar primeiros clientes como implantacao assistida.
 
 > Registro cronológico de sessões de análise e alterações.
 > Atualizar ao final de TODA execução, mesmo sem alteração de código.

@@ -187,4 +187,4 @@ Criterio de pronto:
 
 ## Plano solo founder
 
-O plano operacional para vender sem mascarar instabilidade esta em PLANO-SOLO-FOUNDER-SAAS.md.
+O plano operacional para vender a base estavel com implantacao assistida esta em PLANO-SOLO-FOUNDER-SAAS.md.

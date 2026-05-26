@@ -11,7 +11,7 @@
 - Nao ha onboarding assistido para criar cliente novo sem mexer no repo.
 - PWA/manifest ainda e compartilhado e nao totalmente parametrizado por tenant.
 - Dados ainda dependem de Google Sheets/Apps Script por cliente.
-- Risco comercial: vender como SaaS maduro algo que ainda deve ser posicionado como implantacao assistida.
+- Risco comercial: vender a base estavel atual como se ja fosse SaaS self-service maduro, quando ainda deve ser posicionada como implantacao assistida.
 - Risco operacional: uma pessoa so precisa limitar customizacoes, suporte e promessas de SLA.
 
 ## Testes
