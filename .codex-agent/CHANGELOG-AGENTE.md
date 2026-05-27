@@ -25,6 +25,47 @@
 - **Mudanca aplicada**: criado PLANO-SOLO-FOUNDER-SAAS.md para orientar venda, implantacao assistida, limites de promessa, backlog P0/P1/P2 e gatilhos reais para iniciar Next.js + PostgreSQL.
 - **Governance atualizado**: GAPS.md e DECISOES.md passaram a registrar o risco comercial de vender uma base estavel como se ja fosse SaaS self-service maduro e a decisao de posicionar primeiros clientes como implantacao assistida.
 
+## 2026-05-26 - Sistema de aparência por tenant + decisão de migrar para Next.js + Supabase
+
+- **Operador**: filipe.gomes + Claude Code
+- **Branch**: feature/microSaas
+- **Mudanças de código**:
+  1. `styles.css`: adicionadas CSS vars `--font-body` e `--font-heading` em `:root`; substituídas cores hardcoded de marca (`#153f31`, `#676b2a`, `#245b47`) por `var(--green)` em `.install-link`, `.hero-logo`, `.schedule-column-header`; font-family de body e headings passam a usar as novas CSS vars.
+  2. `admin/index.html`: nova seção "Aparência" no `#config-view` com upload de logo, color pickers (cor principal + fundo), seletores de fonte, botão de reset.
+  3. `app.js`: adicionado `APPEARANCE_STORAGE_KEY`; funções `extractDominantColors` (Canvas API, top 6 cores), `loadGoogleFont` (carregamento dinâmico Google Fonts), `applyAppearance`, `loadAndApplyAppearance`, `fillAppearanceForm`, `setupAppearanceAdmin`; chamadas em `boot()`.
+- **Decisões de produto confirmadas nesta sessão**:
+  - Next.js App Router + Supabase (PostgreSQL + Auth + Storage) como SaaS v1.
+  - Escopo total no banco: tenants, tenant_settings, courts, reservations, blocks, audit_events.
+  - Admin via Supabase Auth (email + senha real), JWT com tenant_id, RLS por tenant.
+  - Aparência salva em `tenant_settings` no banco (logo no Supabase Storage), não mais apenas em localStorage.
+  - Contrato 008 (Euphoria) transformado em contrato genérico de onboarding.
+  - Euphoria ainda não fechou negócio — nenhum dado real no config.
+- **Documentação atualizada**: DECISOES.md, GAPS.md, MAPA-MENTAL.md, RISCOS.md, NEXTJS-DB-ROADMAP.md, contrato 008 reescrito como onboarding genérico.
+- **Validação técnica**: `node --check app.js` aprovado.
+- **Próximo passo**: instalar dependências em `next-app/`, criar projeto no Supabase, preencher `.env.local`, executar schema.sql + rls.sql, criar bucket `tenant-assets` no Supabase Storage.
+
+## 2026-05-26 - Scaffold Next.js + Supabase (SaaS v1)
+
+- **Operador**: filipe.gomes + Claude Code
+- **Branch**: feature/microSaas
+- **Mudanças**:
+  - Criado `next-app/` com estrutura Next.js 14 App Router + TypeScript + Tailwind
+  - `next-app/lib/supabase/client.ts` — cliente browser (anon key)
+  - `next-app/lib/supabase/server.ts` — cliente SSR + service client (nunca ao browser)
+  - `next-app/lib/tenant.ts` — resolução de tenant por slug ou hostname customizado
+  - `next-app/middleware.ts` — refresh de sessão Supabase Auth em todas as rotas
+  - `next-app/supabase/schema.sql` — schema completo: tenants, tenant_domains, tenant_settings, tenant_memberships, courts, reservations, blocks, audit_events
+  - `next-app/supabase/rls.sql` — políticas RLS por tabela + helpers `auth_tenant_id()` e `is_tenant_member()`
+  - `next-app/supabase/seed-637.sql` — seed do tenant 637 derivado de `config/637.config.js`
+  - `next-app/types/supabase.ts` — tipos TypeScript do schema
+  - `next-app/app/[tenant]/page.tsx` — página pública com branding do banco
+  - `next-app/app/[tenant]/admin/page.tsx` — admin protegido por Supabase Auth + membership
+  - `next-app/app/[tenant]/admin/login/page.tsx` — login com Supabase Auth
+  - `next-app/app/[tenant]/admin/AppearanceForm.tsx` — formulário de aparência: upload logo → Supabase Storage, extração de cores, salva em tenant_settings
+- **Decisões consolidadas**: 637 usa `config/637.config.js` como fonte única até migrar; seed-637.sql é o script de migração derivado desse config
+- **Validação técnica**: estrutura de arquivos verificada; TypeScript será checado após instalação das dependências
+- **Próximos passos**: `cd next-app && npm install`; criar projeto Supabase; configurar `.env.local`; executar schema.sql + rls.sql; criar bucket `tenant-assets`; testar localmente
+
 ## 2026-05-26 - Contratos de subdominio por tenant
 
 - **Operador**: Codex/OpenClaw

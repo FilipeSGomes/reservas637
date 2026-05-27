@@ -62,6 +62,7 @@ const FULL_DAY_BLOCK_SENTINEL = "__FULL_DAY__";
 const ADMIN_AUTH_STORAGE_KEY = CLIENT_ADMIN.authStorageKey || "quadras-admin-auth";
 const LAST_BOOKING_CONTACT_KEY = CLIENT_STORAGE.lastContactKey || "quadras-last-booking-contact";
 const SETTINGS_BROADCAST_CHANNEL = `quadras-settings-${CLIENT_ID}`;
+const APPEARANCE_STORAGE_KEY = `${CLIENT_ID}-appearance`;
 
 const DEFAULT_COPY = {
   heroEyebrow: CLIENT_TEXTS.heroEyebrow || "637 Cervejaria • Desde 2017",
@@ -248,6 +249,21 @@ const elements = {
   blockForm: document.querySelector("#block-form"),
   dayBlockForm: document.querySelector("#day-block-form"),
   settingsForm: document.querySelector("#settings-form"),
+  appearanceForm: document.querySelector("#appearance-form"),
+  appearanceStatus: document.querySelector("#appearance-status"),
+  logoUploadInput: document.querySelector("#logo-upload-input"),
+  adminLogoPreview: document.querySelector("#admin-logo-preview"),
+  logoPreviewWrapper: document.querySelector("#logo-preview-wrapper"),
+  removeLogoButton: document.querySelector("#remove-logo-button"),
+  colorSwatchesWrapper: document.querySelector("#color-swatches-wrapper"),
+  colorSwatchesList: document.querySelector("#color-swatches-list"),
+  primaryColorPicker: document.querySelector("#primary-color-picker"),
+  primaryColorHex: document.querySelector("#primary-color-hex"),
+  bgColorPicker: document.querySelector("#bg-color-picker"),
+  bgColorHex: document.querySelector("#bg-color-hex"),
+  fontBodySelect: document.querySelector("#font-body-select"),
+  fontHeadingSelect: document.querySelector("#font-heading-select"),
+  resetAppearanceButton: document.querySelector("#reset-appearance-button"),
 };
 
 boot().catch((error) => {
@@ -328,8 +344,277 @@ function applyClientBranding() {
   }
 }
 
+function rgbToHex(r, g, b) {
+  return "#" + [r, g, b].map((v) => Math.min(255, Math.max(0, v)).toString(16).padStart(2, "0")).join("");
+}
+
+function hexToRgb(hex) {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result
+    ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) }
+    : null;
+}
+
+function isValidHexColor(value) {
+  return /^#[0-9a-fA-F]{6}$/.test(value);
+}
+
+function extractDominantColors(imgEl, count) {
+  count = count || 6;
+  try {
+    const canvas = document.createElement("canvas");
+    const SIZE = 80;
+    canvas.width = SIZE;
+    canvas.height = SIZE;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(imgEl, 0, 0, SIZE, SIZE);
+    const data = ctx.getImageData(0, 0, SIZE, SIZE).data;
+    const colorMap = {};
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      const a = data[i + 3];
+      if (a < 128) continue;
+      const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+      if (luminance > 230 || luminance < 20) continue;
+      const qr = Math.round(r / 24) * 24;
+      const qg = Math.round(g / 24) * 24;
+      const qb = Math.round(b / 24) * 24;
+      const key = qr + "," + qg + "," + qb;
+      colorMap[key] = (colorMap[key] || 0) + 1;
+    }
+    return Object.entries(colorMap)
+      .sort(function (a, b) { return b[1] - a[1]; })
+      .slice(0, count)
+      .map(function (entry) {
+        const parts = entry[0].split(",").map(Number);
+        return rgbToHex(parts[0], parts[1], parts[2]);
+      });
+  } catch (e) {
+    return [];
+  }
+}
+
+function loadGoogleFont(fontName) {
+  if (!fontName) return;
+  const id = "gfont-" + fontName.replace(/\s+/g, "-").toLowerCase();
+  if (document.getElementById(id)) return;
+  const link = document.createElement("link");
+  link.id = id;
+  link.rel = "stylesheet";
+  link.href =
+    "https://fonts.googleapis.com/css2?family=" +
+    encodeURIComponent(fontName) +
+    ":wght@400;500;700;800&display=swap";
+  document.head.appendChild(link);
+}
+
+function applyAppearance(settings) {
+  if (!settings) return;
+  const root = document.documentElement;
+  if (settings.primaryColor && isValidHexColor(settings.primaryColor)) {
+    root.style.setProperty("--green", settings.primaryColor);
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute("content", settings.primaryColor);
+  }
+  if (settings.bgColor && isValidHexColor(settings.bgColor)) {
+    root.style.setProperty("--bg", settings.bgColor);
+  }
+  if (settings.fontBody) {
+    loadGoogleFont(settings.fontBody);
+    root.style.setProperty("--font-body", '"' + settings.fontBody + '", sans-serif');
+  }
+  if (settings.fontHeading) {
+    loadGoogleFont(settings.fontHeading);
+    root.style.setProperty("--font-heading", '"' + settings.fontHeading + '", sans-serif');
+  }
+  if (settings.logoDataUrl) {
+    const logoEl = document.querySelector("#hero-logo-image");
+    if (logoEl) {
+      logoEl.src = settings.logoDataUrl;
+      logoEl.alt = (CLIENT_CONFIG.client && CLIENT_CONFIG.client.name) || "Logo";
+    }
+  }
+}
+
+function loadAndApplyAppearance() {
+  try {
+    const raw = localStorage.getItem(APPEARANCE_STORAGE_KEY);
+    if (!raw) return;
+    const settings = JSON.parse(raw);
+    applyAppearance(settings);
+  } catch (e) {}
+}
+
+function readAppearanceSettings() {
+  try {
+    const raw = localStorage.getItem(APPEARANCE_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function saveAppearanceSettings(settings) {
+  try {
+    localStorage.setItem(APPEARANCE_STORAGE_KEY, JSON.stringify(settings));
+  } catch (e) {}
+}
+
+function fillAppearanceForm() {
+  if (!elements.appearanceForm) return;
+  const settings = readAppearanceSettings();
+  if (elements.primaryColorPicker) {
+    elements.primaryColorPicker.value = settings.primaryColor || CLIENT_BRANDING.primaryColor || "#676b2a";
+  }
+  if (elements.primaryColorHex) {
+    elements.primaryColorHex.value = settings.primaryColor || CLIENT_BRANDING.primaryColor || "#676b2a";
+  }
+  if (elements.bgColorPicker) {
+    elements.bgColorPicker.value = settings.bgColor || "#ece8d8";
+  }
+  if (elements.bgColorHex) {
+    elements.bgColorHex.value = settings.bgColor || "#ece8d8";
+  }
+  if (elements.fontBodySelect) {
+    elements.fontBodySelect.value = settings.fontBody || "";
+  }
+  if (elements.fontHeadingSelect) {
+    elements.fontHeadingSelect.value = settings.fontHeading || "";
+  }
+  if (settings.logoDataUrl) {
+    if (elements.adminLogoPreview) elements.adminLogoPreview.src = settings.logoDataUrl;
+    if (elements.logoPreviewWrapper) elements.logoPreviewWrapper.style.display = "";
+    if (elements.removeLogoButton) elements.removeLogoButton.style.display = "";
+  }
+}
+
+function setupAppearanceAdmin() {
+  if (!elements.appearanceForm) return;
+
+  fillAppearanceForm();
+
+  function syncColorInputs(picker, hex) {
+    if (!picker || !hex) return;
+    picker.addEventListener("input", function () {
+      hex.value = picker.value;
+    });
+    hex.addEventListener("input", function () {
+      if (isValidHexColor(hex.value)) picker.value = hex.value;
+    });
+    hex.addEventListener("blur", function () {
+      if (!isValidHexColor(hex.value)) hex.value = picker.value;
+    });
+  }
+  syncColorInputs(elements.primaryColorPicker, elements.primaryColorHex);
+  syncColorInputs(elements.bgColorPicker, elements.bgColorHex);
+
+  elements.logoUploadInput?.addEventListener("change", function (event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      const dataUrl = e.target.result;
+      if (elements.adminLogoPreview) elements.adminLogoPreview.src = dataUrl;
+      if (elements.logoPreviewWrapper) elements.logoPreviewWrapper.style.display = "";
+      if (elements.removeLogoButton) elements.removeLogoButton.style.display = "";
+      const img = new Image();
+      img.onload = function () {
+        const colors = extractDominantColors(img, 6);
+        if (colors.length && elements.colorSwatchesList) {
+          elements.colorSwatchesList.innerHTML = "";
+          colors.forEach(function (color) {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.title = color;
+            btn.style.cssText =
+              "width:36px;height:36px;border-radius:8px;border:2px solid var(--line);cursor:pointer;background:" +
+              color +
+              ";flex-shrink:0;";
+            btn.addEventListener("click", function () {
+              if (elements.primaryColorPicker) elements.primaryColorPicker.value = color;
+              if (elements.primaryColorHex) elements.primaryColorHex.value = color;
+            });
+            elements.colorSwatchesList.appendChild(btn);
+          });
+          if (elements.colorSwatchesWrapper) elements.colorSwatchesWrapper.style.display = "";
+          if (colors[0] && elements.primaryColorPicker) {
+            elements.primaryColorPicker.value = colors[0];
+            if (elements.primaryColorHex) elements.primaryColorHex.value = colors[0];
+          }
+        }
+      };
+      img.src = dataUrl;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  elements.removeLogoButton?.addEventListener("click", function () {
+    if (elements.adminLogoPreview) elements.adminLogoPreview.src = "";
+    if (elements.logoPreviewWrapper) elements.logoPreviewWrapper.style.display = "none";
+    if (elements.removeLogoButton) elements.removeLogoButton.style.display = "none";
+    if (elements.colorSwatchesWrapper) elements.colorSwatchesWrapper.style.display = "none";
+    if (elements.logoUploadInput) elements.logoUploadInput.value = "";
+    const saved = readAppearanceSettings();
+    delete saved.logoDataUrl;
+    saveAppearanceSettings(saved);
+    const logoEl = document.querySelector("#hero-logo-image");
+    if (logoEl) logoEl.src = CLIENT_BRANDING.logoPath || "";
+  });
+
+  elements.appearanceForm.addEventListener("submit", function (event) {
+    event.preventDefault();
+    const saved = readAppearanceSettings();
+    const primaryColor = elements.primaryColorHex?.value || elements.primaryColorPicker?.value || "";
+    const bgColor = elements.bgColorHex?.value || elements.bgColorPicker?.value || "";
+    const fontBody = elements.fontBodySelect?.value || "";
+    const fontHeading = elements.fontHeadingSelect?.value || "";
+    const logoDataUrl =
+      (elements.adminLogoPreview?.src &&
+        elements.adminLogoPreview.src.startsWith("data:") &&
+        elements.adminLogoPreview.src) ||
+      saved.logoDataUrl ||
+      "";
+    const settings = { primaryColor, bgColor, fontBody, fontHeading, logoDataUrl };
+    saveAppearanceSettings(settings);
+    applyAppearance(settings);
+    if (elements.appearanceStatus) {
+      elements.appearanceStatus.textContent = "Aparência salva.";
+      setTimeout(function () {
+        if (elements.appearanceStatus) elements.appearanceStatus.textContent = "";
+      }, 2500);
+    }
+  });
+
+  elements.resetAppearanceButton?.addEventListener("click", function () {
+    localStorage.removeItem(APPEARANCE_STORAGE_KEY);
+    document.documentElement.style.removeProperty("--green");
+    document.documentElement.style.removeProperty("--bg");
+    document.documentElement.style.removeProperty("--font-body");
+    document.documentElement.style.removeProperty("--font-heading");
+    const logoEl = document.querySelector("#hero-logo-image");
+    if (logoEl) logoEl.src = CLIENT_BRANDING.logoPath || "";
+    if (elements.adminLogoPreview) elements.adminLogoPreview.src = "";
+    if (elements.logoPreviewWrapper) elements.logoPreviewWrapper.style.display = "none";
+    if (elements.removeLogoButton) elements.removeLogoButton.style.display = "none";
+    if (elements.colorSwatchesWrapper) elements.colorSwatchesWrapper.style.display = "none";
+    if (elements.logoUploadInput) elements.logoUploadInput.value = "";
+    fillAppearanceForm();
+    const themeMeta = document.querySelector('meta[name="theme-color"]');
+    if (themeMeta) themeMeta.setAttribute("content", CLIENT_BRANDING.themeColor || "");
+    if (elements.appearanceStatus) {
+      elements.appearanceStatus.textContent = "Aparência restaurada para os padrões.";
+      setTimeout(function () {
+        if (elements.appearanceStatus) elements.appearanceStatus.textContent = "";
+      }, 2500);
+    }
+  });
+}
+
 async function boot() {
   ensureLoadingOverlay();
+  loadAndApplyAppearance();
   applyClientBranding();
   window.showLoading = showLoading;
   window.hideLoading = hideLoading;
@@ -346,6 +631,7 @@ async function boot() {
   applySettings();
   populateSelects();
   attachEvents();
+  setupAppearanceAdmin();
   setupSettingsSync();
   updateAdminRouteUI();
   updateBanner("Carregando agenda...");

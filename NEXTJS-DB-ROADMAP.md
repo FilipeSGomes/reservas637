@@ -1,86 +1,90 @@
-# Roadmap Next.js + banco
+# Roadmap Next.js + Supabase
 
-Minha recomendacao: migrar em fases, sem jogar fora o que ja funciona.
+> Atualizado em 2026-05-26. Decisões técnicas confirmadas.
 
-## Decisao tecnica
+## Decisão técnica confirmada
 
-Usar Next.js faz sentido para transformar o produto em microSaaS real:
+**Stack alvo**: Next.js (App Router) + Supabase (PostgreSQL + Auth + Storage)
 
-- frontend publico por cliente
-- admin autenticado
-- API propria
-- banco relacional
-- isolamento por tenant
-- deploy com preview por branch
-- tenant resolvido por subdominio/host
+- Frontend/Backend: Next.js 14+ — rotas públicas e admin por tenant
+- Banco: Supabase PostgreSQL gerenciado com Row Level Security
+- Auth: Supabase Auth (email + senha real por tenant, JWT com custom claim de tenant_id)
+- Storage: Supabase Storage para logos e assets por tenant
+- Deploy: Vercel (recomendado para integração com Next.js)
 
-Banco recomendado para a primeira versao: PostgreSQL.
+Motivação: resolve multi-tenant real com isolamento de dados, elimina Google Sheets, permite onboarding genérico de cliente sem tocar no código.
 
-## Fase 0 - Agora, antes da reuniao
+## Fase 0 — Concluída (HTML estático, branch feature/microSaas)
 
-Objetivo: demonstrar multi-cliente sem reescrita.
+Entregue:
+- Registry multi-cliente e config loader
+- Config por arquivo para 637 e Euphoria (placeholders)
+- Sistema de aparência: upload de logo, extração de cores, cores/fontes via admin → salvo em localStorage
+- Roteamento por subdomínio (hostname → tenant)
+- PWA multi-tenant funcional
 
-Entregue nesta branch:
+## Fase 1 — Em andamento (Next.js scaffold + Supabase)
 
-- registry de clientes
-- config loader por client
-- config demo para segundo cliente
-- admin/publico usando a config selecionada
-- documentacao de operacao multi-cliente
+Objetivo: criar o projeto Next.js dentro do mesmo repo, com Supabase conectado e tenant resolution funcionando.
 
-## Fase 1 - Next.js shell
+Entregas:
+- `next-app/` com scaffold Next.js + Supabase SSR
+- `middleware.ts` resolvendo tenant por hostname
+- `next-app/supabase/schema.sql` com schema completo
+- `next-app/supabase/rls.sql` com políticas RLS
+- Página pública `[tenant]` carregando config do banco
+- Painel admin `[tenant]/admin` com auth Supabase
+- Aparência (cores, fontes, logo) lida do banco em `tenant_settings`
+- Upload de logo para Supabase Storage no admin
 
-Criar novo app Next.js mantendo o contrato visual e funcional:
+## Fase 2 — Operação no banco
 
-- app/[tenant]/page.tsx para agenda publica
-- app/[tenant]/admin/page.tsx para admin
-- componentes separados para agenda, reserva, pagamento e bloqueios
-- config inicial carregada por tenant
-- sem mudar ainda a regra de negocio
+Substituir Google Sheets por Supabase nas operações:
 
-## Fase 2 - API propria
+- Listar/criar reservas: `reservations` table
+- Listar/criar bloqueios: `blocks` table
+- Confirmar reserva: Server Action autenticada
+- Configurar preços/textos: `tenant_settings` table
 
-Substituir Apps Script por rotas API:
+Manter adaptador de importação de Google Sheets para migrar 637.
 
-- GET /api/:tenant/agenda?date=YYYY-MM-DD
-- POST /api/:tenant/reservas
-- POST /api/:tenant/reservas/:id/confirmar
-- POST /api/:tenant/bloqueios
-- PATCH /api/:tenant/config
+## Fase 3 — Onboarding e produto
 
-Manter adaptador de importacao/exportacao Google Sheets para transicao.
+- Tela interna de onboarding de novo cliente (sem mexer no repo)
+- Tabela `tenant_memberships` com papéis (owner, admin, atendente)
+- Domínios customizados via `tenant_domains`
+- Audit log via `audit_events`
+- Dashboard operacional (reservas do dia, ocupação)
+- Exportação LGPD por tenant
 
-## Fase 3 - Banco
+## Fase 4 — Produto comercial
 
-Modelo inicial:
+- Billing/assinatura (Stripe ou equivalente)
+- Multiunidade (tenants com N unidades)
+- Relatórios e gráficos
+- Integrações de pagamento (gateway além do PIX manual)
+- SLA documentado e suporte estruturado
 
-- tenants
-- tenant_domains
-- tenant_settings
-- courts
-- reservations
-- blocks
-- users
-- audit_events
+## Schema do banco (tabelas principais)
 
-Regras importantes:
+```
+tenants              — id, slug, name, short_name, timezone
+tenant_domains       — hostname → tenant_id (custom domains)
+tenant_settings      — aparência, contato, horário, pricing, textos
+tenant_memberships   — user_id + tenant_id + role
+courts               — por tenant
+reservations         — por tenant, com snapshot de preço
+blocks               — por tenant (faixa ou dia inteiro)
+audit_events         — log de ações admin por tenant
+```
 
-- toda query filtrada por tenant_id
-- tenant resolvido pelo host da requisicao, nunca apenas por parametro do cliente
-- status e pagamento normalizados
-- reserva com snapshot de preco
-- auditoria para confirmacao, bloqueio e alteracao de configuracao
+## Regra de tenant
 
-## Fase 4 - Produto SaaS
-
-- login por usuario
-- papeis: owner, admin, atendente
-- dominios por tenant
-- onboarding de novo cliente
-- billing/assinatura
-- dashboard operacional
-- backups e exportacao LGPD
+- Tenant resolvido pelo host da requisição: `euphoria.fisamtech.com` → slug `euphoria`
+- Nunca aceitar tenant_id como parâmetro do cliente sem validar o host
+- `tenant_domains` permite domínios customizados futuros
+- RLS garante que cada query retorna apenas dados do tenant correto
 
 ## Risco principal
 
-Migrar tudo antes de validar venda aumenta risco sem necessidade. A branch atual deve servir como ponte comercial; Next.js + banco deve ser tratado como produto v2, com backlog e migracao controlada.
+Migrar 637 para o banco antes de validar venda com novos clientes aumenta risco sem necessidade. O HTML estático de 637 deve permanecer estável como legado até que a migração seja explicitamente planejada.

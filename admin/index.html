@@ -236,6 +236,76 @@
                 </form>
               </article>
 
+              <article class="admin-card" id="appearance-card">
+                <h3>Aparência</h3>
+                <p class="fine-print">Personalize logo, cores e fontes. As mudanças são salvas localmente e aplicadas imediatamente.</p>
+                <form id="appearance-form" class="stack-form">
+                  <div class="config-group">
+                    <p class="config-group-title">Logo</p>
+                    <div id="logo-preview-wrapper" style="margin-bottom: 12px; display: none;">
+                      <img id="admin-logo-preview" style="width: 80px; height: 80px; object-fit: cover; border-radius: 12px; border: 1px solid var(--line);" alt="Preview da logo" />
+                    </div>
+                    <label class="field">
+                      <span>Upload da logo</span>
+                      <input type="file" id="logo-upload-input" accept="image/*" style="padding: 8px 0;" />
+                    </label>
+                    <div id="color-swatches-wrapper" style="display: none;">
+                      <p style="font-size: 0.85rem; color: var(--muted); margin: 10px 0 6px;">Cores extraídas — clique para usar como cor principal:</p>
+                      <div id="color-swatches-list" style="display: flex; gap: 8px; flex-wrap: wrap;"></div>
+                    </div>
+                    <button type="button" id="remove-logo-button" class="ghost-button" style="display: none; margin-top: 10px; font-size: 0.85rem; min-height: 36px; padding: 6px 14px;">Remover logo</button>
+                  </div>
+
+                  <div class="config-group">
+                    <p class="config-group-title">Cores</p>
+                    <label class="field">
+                      <span>Cor principal</span>
+                      <div style="display: flex; align-items: center; gap: 8px;">
+                        <input type="color" id="primary-color-picker" style="width: 44px; height: 40px; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; padding: 2px; background: none;" />
+                        <input type="text" id="primary-color-hex" placeholder="#676b2a" style="flex: 1;" />
+                      </div>
+                    </label>
+                    <label class="field">
+                      <span>Cor de fundo</span>
+                      <div style="display: flex; align-items: center; gap: 8px;">
+                        <input type="color" id="bg-color-picker" style="width: 44px; height: 40px; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; padding: 2px; background: none;" />
+                        <input type="text" id="bg-color-hex" placeholder="#ece8d8" style="flex: 1;" />
+                      </div>
+                    </label>
+                  </div>
+
+                  <div class="config-group">
+                    <p class="config-group-title">Tipografia</p>
+                    <label class="field">
+                      <span>Fonte do corpo</span>
+                      <select id="font-body-select">
+                        <option value="">Padrão (Manrope)</option>
+                        <option value="Manrope">Manrope</option>
+                        <option value="Inter">Inter</option>
+                        <option value="Nunito">Nunito</option>
+                        <option value="Lato">Lato</option>
+                        <option value="Open Sans">Open Sans</option>
+                      </select>
+                    </label>
+                    <label class="field">
+                      <span>Fonte dos títulos</span>
+                      <select id="font-heading-select">
+                        <option value="">Padrão (Barlow Condensed)</option>
+                        <option value="Barlow Condensed">Barlow Condensed</option>
+                        <option value="Bebas Neue">Bebas Neue</option>
+                        <option value="Oswald">Oswald</option>
+                        <option value="Raleway">Raleway</option>
+                        <option value="Montserrat">Montserrat</option>
+                      </select>
+                    </label>
+                  </div>
+
+                  <button class="primary-button" type="submit">Salvar aparência</button>
+                  <button type="button" id="reset-appearance-button" class="ghost-button" style="font-size: 0.85rem;">Restaurar padrões</button>
+                  <small id="appearance-status" class="fine-print" style="margin-top: 6px;"></small>
+                </form>
+              </article>
+
               <article class="admin-card">
                 <h3>Textos do app</h3>
                 <form id="config-form" class="stack-form">
